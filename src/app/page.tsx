@@ -1,101 +1,249 @@
-import Image from "next/image";
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Bell, History, Menu, Plane, Search } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 
-export default function Home() {
+const MainPage = () => {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container flex items-center justify-between h-16">
+          <div className="flex items-center gap-2">
+            <Plane className="h-6 w-6" />
+            <h1 className="font-bold text-xl">Travel Maker : 여행을 더 쉽게</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <Bell className="h-5 w-5" />
+            <History className="h-5 w-5" />
+            <Button variant="ghost" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="container py-6">
+        <div className="flex gap-6">
+          <div className="flex-1">
+            <div className="relative mb-6">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-9 w-full"
+                placeholder="어느 나라로 여행을 떠나시나요?"
+              />
+            </div>
+
+            <nav className="flex gap-4 mb-8 overflow-x-auto pb-2">
+              {[
+                '전체',
+                '국내',
+                '일본',
+                '중국',
+                '몽골',
+                '베트남',
+                '스위스',
+                '체코',
+                '태국',
+              ].map((item) => (
+                <Button
+                  key={item}
+                  variant={item === '전체' ? 'default' : 'ghost'}
+                  className="rounded-full"
+                >
+                  {item}
+                </Button>
+              ))}
+            </nav>
+
+            <section className="mb-8">
+              <h2 className="text-lg font-bold mb-4">요즘 핫한 여행지</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    alt: 'Mongolia landscape',
+                    src: '/placeholder.svg?height=200&width=400',
+                  },
+                  {
+                    alt: 'Street scene',
+                    src: '/placeholder.svg?height=200&width=400',
+                  },
+                  {
+                    alt: 'Temple view',
+                    src: '/placeholder.svg?height=200&width=400',
+                  },
+                  {
+                    alt: 'Waterfront city',
+                    src: '/placeholder.svg?height=200&width=400',
+                  },
+                ].map((item, index) => (
+                  <Card key={index} className="overflow-hidden">
+                    <Image
+                      src={item.src}
+                      alt={item.alt}
+                      width={400}
+                      height={200}
+                      className="w-full object-cover h-48"
+                    />
+                  </Card>
+                ))}
+              </div>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-lg font-bold mb-4">최신 여행 동행</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    date: '11.10~11.12',
+                    title: '오사카 부돈 동행 구해요!',
+                    user: '김정은',
+                    age: '20대 여자',
+                  },
+                  {
+                    date: '12.10~12.15',
+                    title: '도쿄 동행 찾아요',
+                    user: '남궁민',
+                    age: '20대 여자',
+                  },
+                  {
+                    date: '11.25~11.30',
+                    title: '맛집 탐방 같이 하실 분!',
+                    user: '도건우',
+                    age: '30대 남자',
+                  },
+                  {
+                    date: '10.25~10.27',
+                    title: '상하이 쇼핑 메이트 구해요',
+                    user: '김소래',
+                    age: '20대 여자',
+                  },
+                ].map((item, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <p className="text-sm text-muted-foreground">
+                        {item.date}
+                      </p>
+                      <p className="font-medium my-2">{item.title}</p>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{item.user[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">
+                          {item.user} {item.age}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-bold mb-4">최신 여행 포스트</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    title: '베트남 여행 시 주의점',
+                    desc: '여행 가기 전 꼭 확인...',
+                    user: '김소정',
+                    age: '20대 여자',
+                  },
+                  {
+                    title: '일본 갈 만한 곳 추천 해주세요!',
+                    desc: '오사카 갈만한 곳 추...',
+                    user: '이상건',
+                    age: '20대 남자',
+                  },
+                  {
+                    title: '별레 물멍을 매 대처법',
+                    desc: '별레 물멍을 매 호텔에...',
+                    user: '최현정',
+                    age: '40대 여자',
+                  },
+                  {
+                    title: '여행 경비 절묘',
+                    desc: '몽골 5박 6일 경비 알...',
+                    user: '이현민',
+                    age: '50대 남자',
+                  },
+                ].map((item, index) => (
+                  <Card key={index}>
+                    <CardContent className="p-4">
+                      <h3 className="font-medium mb-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {item.desc}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback>{item.user[0]}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">
+                          {item.user} {item.age}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="hidden lg:flex lg:flex-col lg:w-72 gap-6">
+            <Card>
+              <CardContent className="p-4">
+                <h2 className="font-bold text-xl mb-4">로그인</h2>
+                <form className="space-y-4">
+                  <Input placeholder="이메일" type="email" />
+                  <Input placeholder="비밀번호" type="password" />
+                  <Button className="w-full">로그인</Button>
+                </form>
+                <div className="mt-4 text-center text-sm">
+                  <Link href="#" className="text-primary hover:underline">
+                    회원가입
+                  </Link>
+                  {' | '}
+                  <Link href="#" className="text-primary hover:underline">
+                    비밀번호 찾기
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <h2 className="font-bold text-xl mb-2">맛집 찾으세요?</h2>
+                <p className="text-muted-foreground mb-4">
+                  Travel Maker 가입하고
+                  <br />
+                  최신 여행 포스트를 확인하세요!
+                </p>
+                <Button className="w-full">회원가입</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <h2 className="font-bold text-xl mb-2">광고</h2>
+                <Image
+                  src="/placeholder.svg?height=200&width=300"
+                  alt="Advertisement"
+                  width={300}
+                  height={200}
+                  className="w-full object-cover"
+                />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  여행 상품 특별 할인 중!
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
-  );
+  )
 }
+
+export default MainPage
