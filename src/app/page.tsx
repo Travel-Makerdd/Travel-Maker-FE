@@ -1,3 +1,4 @@
+'use client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -5,8 +6,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Bell, History, Menu, Plane, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const MainPage = () => {
+const route = useRouter();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -201,7 +205,7 @@ const MainPage = () => {
                   <Button className="w-full">로그인</Button>
                 </form>
                 <div className="mt-4 text-center text-sm">
-                  <Link href="#" className="text-primary hover:underline">
+                  <Link href="/signup" className="text-primary hover:underline">
                     회원가입
                   </Link>
                   {' | '}
@@ -220,7 +224,7 @@ const MainPage = () => {
                   <br />
                   최신 여행 포스트를 확인하세요!
                 </p>
-                <Button className="w-full">회원가입</Button>
+                <Button className="w-full" onClick={() => route.push("/signup")}>회원가입</Button>
               </CardContent>
             </Card>
 
