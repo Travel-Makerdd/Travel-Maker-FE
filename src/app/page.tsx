@@ -12,22 +12,7 @@ const MainPage = () => {
 const route = useRouter();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <Plane className="h-6 w-6" />
-            <h1 className="font-bold text-xl">Travel Maker : 여행을 더 쉽게</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Bell className="h-5 w-5" />
-            <History className="h-5 w-5" />
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background justify-between h-16 pl-12">
 
       <main className="container py-6">
         <div className="flex gap-6">
