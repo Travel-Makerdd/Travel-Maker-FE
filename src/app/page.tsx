@@ -1,3 +1,4 @@
+'use client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -5,25 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Bell, History, Menu, Plane, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 const MainPage = () => {
+const route = useRouter();
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-2">
-            <Plane className="h-6 w-6" />
-            <h1 className="font-bold text-xl">Travel Maker : 여행을 더 쉽게</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Bell className="h-5 w-5" />
-            <History className="h-5 w-5" />
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background justify-between h-16 pl-12">
 
       <main className="container py-6">
         <div className="flex gap-6">
@@ -201,7 +190,7 @@ const MainPage = () => {
                   <Button className="w-full">로그인</Button>
                 </form>
                 <div className="mt-4 text-center text-sm">
-                  <Link href="#" className="text-primary hover:underline">
+                  <Link href="/signup" className="text-primary hover:underline">
                     회원가입
                   </Link>
                   {' | '}
@@ -220,7 +209,7 @@ const MainPage = () => {
                   <br />
                   최신 여행 포스트를 확인하세요!
                 </p>
-                <Button className="w-full">회원가입</Button>
+                <Button className="w-full" onClick={() => route.push("/signup")}>회원가입</Button>
               </CardContent>
             </Card>
 
