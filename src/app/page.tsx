@@ -7,6 +7,7 @@ import { Bell, History, Menu, Plane, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import AdImage from '../../public/image/winter-city.webp'
 
 const MainPage = () => {
 const route = useRouter();
@@ -217,14 +218,14 @@ const route = useRouter();
               <CardContent className="p-4">
                 <h2 className="font-bold text-xl mb-2">광고</h2>
                 <Image
-                  src="/placeholder.svg?height=200&width=300"
+                  src={AdImage}
                   alt="Advertisement"
                   width={300}
                   height={200}
                   className="w-full object-cover"
                 />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  여행 상품 특별 할인 중!
+                  캐나다 여행 상품 특별 할인 중!
                 </p>
               </CardContent>
             </Card>
