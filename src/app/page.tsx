@@ -3,14 +3,60 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Bell, History, Menu, Plane, Search } from 'lucide-react'
+import { Bell, CloudCog, History, Menu, Plane, Search } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import AdImage from '../../public/image/winter-city.webp'
+import { useAuth } from './context/AuthContext'
+import { useState } from 'react'
 
 const MainPage = () => {
-const route = useRouter();
+  const route = useRouter();
+  const { auth, login, logout } = useAuth();
+  const [userEmail, setEmail] = useState('');
+  const [userPassword, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+  
+    try {
+      const response = await fetch('/api/signIn', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userEmail, userPassword }),
+      });
+  
+      if (response.ok) {
+        const result = await response.json(); 
+        console.log('전체 응답 데이터:', result);
+  
+        if (result.data) {
+          const { nickname, token } = result.data;
+          console.log('닉네임:', nickname);
+          console.log('토큰:', token);
+  
+          login(userEmail, nickname, token);
+        } else {
+          console.error('응답 데이터에 "data" 필드가 없습니다:', result);
+        }
+      } else {
+        const errorData = await response.json();
+        setErrorMessage(errorData.message || '로그인 실패');
+      }
+    } catch (error) {
+      console.error('로그인 요청 실패:', error);
+      setErrorMessage('로그인 중 오류가 발생했습니다.');
+    }
+  };
+  
+
+  const handleLogout = () => {
+    logout(); 
+    setEmail(''); 
+    setPassword(''); 
+  };
 
   return (
     <div className="min-h-screen bg-background justify-between h-16 pl-12">
@@ -182,23 +228,44 @@ const route = useRouter();
           </div>
 
           <div className="hidden lg:flex lg:flex-col lg:w-72 gap-6">
-            <Card>
+          <Card>
               <CardContent className="p-4">
-                <h2 className="font-bold text-xl mb-4">로그인</h2>
-                <form className="space-y-4">
-                  <Input placeholder="이메일" type="email" />
-                  <Input placeholder="비밀번호" type="password" />
-                  <Button className="w-full">로그인</Button>
-                </form>
-                <div className="mt-4 text-center text-sm">
-                  <Link href="/signup" className="text-primary hover:underline">
-                    회원가입
-                  </Link>
-                  {' | '}
-                  <Link href="#" className="text-primary hover:underline">
-                    비밀번호 찾기
-                  </Link>
-                </div>
+                {auth.isLoggedIn ? (
+                  <div className="space-y-4">
+                    <h2 className="font-bold text-xl mb-4">
+                      {auth.nickname}님, 안녕하세요!
+                    </h2>
+                    <Button className="w-full" variant="outline" onClick={handleLogout}>
+                      로그아웃
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <h2 className="font-bold text-xl mb-4">로그인</h2>
+                    <form onSubmit={handleLogin} className="space-y-4">
+                      <Input
+                        placeholder="이메일"
+                        type="email"
+                        value={userEmail}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                      <Input
+                        placeholder="비밀번호"
+                        type="password"
+                        value={userPassword}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <Button className="w-full" type="submit">
+                        로그인
+                      </Button>
+                    </form>
+                    {errorMessage && (
+                      <p className="text-red-500 text-sm mt-2">{errorMessage}</p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
