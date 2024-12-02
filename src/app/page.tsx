@@ -271,13 +271,13 @@ const MainPage = () => {
 
             <Card>
               <CardContent className="p-4">
-                <h2 className="font-bold text-xl mb-2">맛집 찾으세요?</h2>
+                <h2 className="font-bold text-xl mb-2">여행 이야기가 궁금하세요?</h2>
                 <p className="text-muted-foreground mb-4">
-                  Travel Maker 가입하고
+                  Travel Maker 사용자들의
                   <br />
                   최신 여행 포스트를 확인하세요!
                 </p>
-                <Button className="w-full" onClick={() => route.push("/signup")}>회원가입</Button>
+                <Button className="w-full" onClick={() => route.push("/community")}>커뮤니티 바로가기</Button>
               </CardContent>
             </Card>
 
