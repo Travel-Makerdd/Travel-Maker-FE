@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, History, Menu, Plane, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -8,13 +8,20 @@ import { useAuth } from '@/app/context/AuthContext';
 
 export const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { auth, logout } = useAuth();
+    const { auth } = useAuth();
+    const route = useRouter();
+
+    // 최신 auth 값을 확인하기 위한 useEffect
+    useEffect(() => {
+        if (isOpen) {
+            console.log('Sidebar opened. Current auth state:', auth); // 슬라이드바가 열릴 때 auth 값 출력
+        }
+    }, [isOpen, auth]); // isOpen과 auth 상태 변경 시 실행
 
     const toggleSide = () => {
         setIsOpen(!isOpen);
     };
 
-    const route = useRouter();
     return (
         <>
             <header className="border-b">
@@ -43,9 +50,8 @@ export const Header = () => {
             )}
 
             <div
-                className={`fixed top-0 right-0 h-full w-60 bg-background border-l shadow-lg transform transition-transform duration-200 ease-in-out z-50 ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}
+                className={`fixed top-0 right-0 h-full w-60 bg-background border-l shadow-lg transform transition-transform duration-200 ease-in-out z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 <div className="flex flex-col h-full">
                     <div className="p-4 border-b">
@@ -71,7 +77,7 @@ export const Header = () => {
                     </div>
                     <nav className="flex-1 overflow-y-auto">
                         <div className="flex flex-col p-4">
-                            {auth.isLoggedIn ? ( // 로그인된 경우에만 표시
+                            {auth.isLoggedIn ? (
                                 <>
                                     <Button
                                         variant="ghost"
@@ -101,6 +107,24 @@ export const Header = () => {
                                     >
                                         나의 리뷰
                                     </Button>
+                                    {auth.role === 'GUIDE' && ( // GUIDE 역할만 접근 가능
+                                        <>
+                                            <Button
+                                                variant="ghost"
+                                                className="justify-start h-11"
+                                                onClick={() => route.push('/trips/register')}
+                                            >
+                                                상품 등록
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                className="justify-start h-11"
+                                                onClick={() => route.push('/product/edit')}
+                                            >
+                                                상품 수정
+                                            </Button>
+                                        </>
+                                    )}
                                 </>
                             ) : (
                                 <p className="text-muted-foreground">로그인 후 이용 가능합니다.</p>
