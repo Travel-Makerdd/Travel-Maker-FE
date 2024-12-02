@@ -22,6 +22,7 @@ const MainPage = () => {
     e.preventDefault();
   
     try {
+      // 로그인 요청
       const response = await fetch('/api/signIn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,7 +30,7 @@ const MainPage = () => {
       });
   
       if (response.ok) {
-        const result = await response.json(); 
+        const result = await response.json();
         console.log('전체 응답 데이터:', result);
   
         if (result.data) {
@@ -37,9 +38,42 @@ const MainPage = () => {
           console.log('닉네임:', nickname);
           console.log('토큰:', token);
   
-          login(userEmail, nickname, token);
+          // 프로필 확인 요청
+          try {
+            const profileResponse = await fetch('/api/profile/check', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`, // 로그인에서 받은 토큰 사용
+              },
+            });
+  
+            if (profileResponse.ok) {
+              const profileResult = await profileResponse.json();
+              console.log('프로필 응답 데이터:', profileResult);
+  
+              if (profileResult.status === 200 && profileResult.data) {
+                const { profileRole } = profileResult.data; // role 가져오기
+                console.log('사용자 역할:', profileRole);
+  
+                // 최종 로그인 처리
+                login(userEmail, nickname, token, profileRole);
+              } else {
+                console.error('프로필 데이터가 유효하지 않습니다:', profileResult);
+                setErrorMessage('사용자 역할을 확인할 수 없습니다.');
+              }
+            } else {
+              const profileError = await profileResponse.json();
+              console.error('프로필 확인 실패:', profileError);
+              setErrorMessage('프로필 확인 중 문제가 발생했습니다.');
+            }
+          } catch (profileError) {
+            console.error('프로필 요청 실패:', profileError);
+            setErrorMessage('프로필 요청 중 오류가 발생했습니다.');
+          }
         } else {
           console.error('응답 데이터에 "data" 필드가 없습니다:', result);
+          setErrorMessage('로그인 응답이 유효하지 않습니다.');
         }
       } else {
         const errorData = await response.json();
@@ -50,6 +84,7 @@ const MainPage = () => {
       setErrorMessage('로그인 중 오류가 발생했습니다.');
     }
   };
+  
   
 
   const handleLogout = () => {
