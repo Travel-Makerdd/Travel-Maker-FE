@@ -6,34 +6,68 @@ import { Input } from "@/components/ui/input"
 import { useRouter } from 'next/navigation'
 
 export default function Component() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [passwordCheck, setPasswordCheck] = useState("")
-  const [nickname, setNickname] = useState("")
+  const [userEmail, setUserEmail] = useState("")
+  const [userPassword, setUserPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [userNickname, setUserNickname] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
-  const onEmailHandler = (event) => setEmail(event.currentTarget.value)
-  const onPasswordHandler = (event) => setPassword(event.currentTarget.value)
-  const onPasswordCheckHandler = (event) => setPasswordCheck(event.currentTarget.value)
-  const onNicknameHandler = (event) => setNickname(event.currentTarget.value)
+  const onUserEmailHandler = (event) => setUserEmail(event.currentTarget.value)
+  const onUserPasswordHandler = (event) => setUserPassword(event.currentTarget.value)
+  const onConfirmPasswordHandler = (event) => setConfirmPassword(event.currentTarget.value)
+  const onUserNicknameHandler = (event) => setUserNickname(event.currentTarget.value)
 
-  const onSubmitHandler = (event) => {
+  const onSubmitHandler = async (event) => {
+    console.log("onSubmitHandler 호출됨"); 
     event.preventDefault()
 
-    if (password !== passwordCheck) {
-      return alert("비밀번호와 비밀번호 확인 칸이 같지 않습니다.")
+    if (userPassword !== confirmPassword) {
+      alert("비밀번호와 비밀번호 확인 칸이 같지 않습니다.")
+      return
     }
 
     const body = {
-      email: email,
-      password: password,
-      nickname: nickname,
+      userEmail: userEmail,
+      userPassword: userPassword,
+      confirmPassword: confirmPassword,
+      userNickname: userNickname,
     }
 
-    // Submit logic here
-    route.push("/");
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/signUp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+
+      // 응답 상태 확인
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(`회원가입에 실패했습니다: ${errorData.message || "알 수 없는 에러"}`)
+        return
+      }
+
+      const data = await response.json()
+
+      // 회원가입 성공 처리
+      if (data.status === 201) {
+        alert("회원가입이 완료되었습니다!")
+        route.push("/")
+      } else {
+        alert(`회원가입에 실패했습니다: ${data.message || "알 수 없는 에러"}`)
+      }
+    } catch (error) {
+      console.error("회원가입 요청 중 오류 발생:", error)
+      alert("회원가입 요청 중 오류가 발생했습니다.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const route = useRouter();
+  const route = useRouter()
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8">
@@ -61,57 +95,58 @@ export default function Component() {
             <div>
               <Input
                 className="h-12 rounded-md bg-gray-100 px-4"
-                id="email"
-                name="email"
+                id="userEmail"
+                name="userEmail"
                 placeholder="이메일"
                 required
                 type="email"
-                value={email}
-                onChange={onEmailHandler}
+                value={userEmail}
+                onChange={onUserEmailHandler}
               />
             </div>
             <div>
               <Input
                 className="h-12 rounded-md bg-gray-100 px-4"
-                id="password"
-                name="password"
+                id="userPassword"
+                name="userPassword"
                 placeholder="비밀번호"
                 required
                 type="password"
-                value={password}
-                onChange={onPasswordHandler}
+                value={userPassword}
+                onChange={onUserPasswordHandler}
               />
             </div>
             <div>
               <Input
                 className="h-12 rounded-md bg-gray-100 px-4"
-                id="password-check"
-                name="password-check"
+                id="confirmPassword"
+                name="confirmPassword"
                 placeholder="비밀번호 확인"
                 required
                 type="password"
-                value={passwordCheck}
-                onChange={onPasswordCheckHandler}
+                value={confirmPassword}
+                onChange={onConfirmPasswordHandler}
               />
             </div>
             <div>
               <Input
                 className="h-12 rounded-md bg-gray-100 px-4"
-                id="nickname"
-                name="nickname"
+                id="userNickname"
+                name="userNickname"
                 placeholder="닉네임"
                 required
                 type="text"
-                value={nickname}
-                onChange={onNicknameHandler}
+                value={userNickname}
+                onChange={onUserNicknameHandler}
               />
             </div>
           </div>
           <Button
-            className="h-12 w-full rounded-full bg-blue-500 font-semibold text-white hover:bg-blue-600"
+            className={`h-12 w-full rounded-full font-semibold text-white ${isLoading ? 'bg-gray-400' : 'bg-blue-500 hover:bg-blue-600'}`}
             type="submit"
+            disabled={isLoading}
           >
-            회원가입
+            {isLoading ? "처리 중..." : "회원가입"}
           </Button>
         </form>
       </div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 // import localFont from 'next/font/local'
 import '@/styles/globals.css'
 import { Header } from '@/components/header'
+import { AuthProvider } from './context/AuthContext'
 // const geistSans = localFont({
 //   src: './fonts/GeistVF.woff',
 //   variable: '--font-geist-sans',
@@ -21,18 +22,18 @@ export const metadata: Metadata = {
 const RootLayout = ({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) => {
   return (
     <html lang="en">
-      <body
-        className={`antialiased`} // ${geistSans.variable} ${geistMono.variable}
-        >
-        <Header />  
-        {children}
+      <body className="antialiased">
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
-  )
-}
+  );
+};
 
 export default RootLayout
