@@ -24,7 +24,7 @@ export default function ProfilePage() {
   const [profileRole, setProfileRole] = useState<UserRole>('TRAVELER');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMessage, setDialogMessage] = useState({ title: '', description: '' });
-  const { auth } = useAuth();
+  const { auth, login } = useAuth();
 
   const travelStyles = [
     { id: 'hotel', label: '호캉스' },
@@ -48,6 +48,7 @@ export default function ProfilePage() {
   }, []);
 
   const fetchProfileData = async () => {
+    console.log('fetchProfileData called');
     if (!auth.token) {
       console.error('토큰이 없습니다. 로그인 상태를 확인하세요.');
       return;
@@ -81,49 +82,61 @@ export default function ProfilePage() {
 
   const handleSubmit = async () => {
     const data = {
-      profileRole,
-      profileBio: profileBio || "저는 맛집 투어를 좋아해요",
-      profileFavorite,
-      profileStyle: profileStyle,
+        profileRole,
+        profileBio: profileBio || "저는 맛집 투어를 좋아해요",
+        profileFavorite,
+        profileStyle: profileStyle,
     };
 
     try {
-      const response = await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth.token}`,
-        },
-        body: JSON.stringify(data),
-      });
+        const response = await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify(data),
+        });
 
-      if (response.ok) {
-        setDialogMessage({
-          title: "프로필 업데이트 성공",
-          description: "프로필이 성공적으로 업데이트되었습니다."
-        });
-        fetchProfileData();
-      } else {
-        setDialogMessage({
-          title: "프로필 업데이트 실패",
-          description: "프로필 업데이트 중 문제가 발생했습니다."
-        });
-      }
-      setIsDialogOpen(true);
+        if (response.ok) {
+            const result = await response.json();
+
+            setDialogMessage({
+                title: "프로필 업데이트 성공",
+                description: "프로필이 성공적으로 업데이트되었습니다."
+            });
+
+            fetchProfileData();
+            login(auth.email, auth.nickname, auth.token, profileRole);
+
+            console.log('Auth Updated:', {
+              isLoggedIn: auth.isLoggedIn,
+              email: auth.email,
+              nickname: auth.nickname,
+              token: auth.token,
+              role: profileRole,
+            });
+        } else {
+            setDialogMessage({
+                title: "프로필 업데이트 실패",
+                description: "프로필 업데이트 중 문제가 발생했습니다."
+            });
+        }
+        setIsDialogOpen(true);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setDialogMessage({
-        title: "서버 오류",
-        description: "서버와의 통신 중 문제가 발생했습니다."
-      });
-      setIsDialogOpen(true);
+        console.error('Error updating profile:', error);
+        setDialogMessage({
+            title: "서버 오류",
+            description: "서버와의 통신 중 문제가 발생했습니다."
+        });
+        setIsDialogOpen(true);
     }
-  };
+};
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative">
       {/* Current Profile Information - Moved to top-left */}
-      <div className="absolute left-4 top-4 w-1/4 p-4">
+      {/*<div className="absolute left-4 top-4 w-1/4 p-4">
         <Card>
           <CardHeader>
             <CardTitle>현재 프로필 정보</CardTitle>
@@ -135,7 +148,7 @@ export default function ProfilePage() {
             <p><strong>여행 스타일:</strong> {profileStyle ? travelStyles.find(style => style.id === profileStyle)?.label : '선택되지 않음'}</p>
           </CardContent>
         </Card>
-      </div>
+      </div>*/}
   
       <main className="w-full max-w-2xl p-4">
         <div className="flex items-center justify-between mb-6">
