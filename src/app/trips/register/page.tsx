@@ -1,128 +1,272 @@
 'use client'
 
-import { useState } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
-import { Plus, Minus } from 'lucide-react'
+import React from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from '@/components/ui/form'
+import { useForm } from 'react-hook-form'
+import { CalendarIcon, Pencil, Trash2 } from 'lucide-react'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 
-interface Activity {
-  acivity_time: string
-  acivity_title: string
-  activity_content: string
-  activity_expense: number
-}
-
-interface ScheduleDay {
-  activity: Activity[]
-}
-
-interface TripFormData {
-  trip_title: string
-  trip_description: string
-  trip_price: number
-  trip_start: string
-  trip_end: string
-  tripImage: File | null // 단일 파일
-  schedual_day: ScheduleDay[]
-}
-
-export default function CreateTripPage() {
-  const { register, control, handleSubmit, formState: { errors } } = useForm<TripFormData>({
-    defaultValues: {
-      schedual_day: [{ activity: [{ acivity_time: '', acivity_title: '', activity_content: '', activity_expense: 0 }] }]
-    }
-  })
-
-  const { fields: scheduleDayFields, append: appendScheduleDay, remove: removeScheduleDay } = useFieldArray({
-    control,
-    name: 'schedual_day'
-  })
-
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-
-  const onSubmit = async (data: TripFormData) => {
-    // FormData 생성
-    const formData = new FormData()
-    formData.append('trip_title', data.trip_title)
-    formData.append('trip_description', data.trip_description)
-    formData.append('trip_price', data.trip_price.toString())
-    formData.append('trip_start', data.trip_start)
-    formData.append('trip_end', data.trip_end)
-
-    // 단일 파일 추가
-    if (selectedImage) {
-      formData.append('tripImage', selectedImage)
-    }
-
-    // 일정 데이터 추가
-    formData.append('schedual_day', JSON.stringify(data.schedual_day))
-
-    try {
-      const response = await fetch('/api/trip/create', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (response.ok) {
-        console.log('여행 상품이 성공적으로 등록되었습니다.')
-      } else {
-        console.error('여행 상품 등록 중 오류가 발생했습니다.')
-      }
-    } catch (error) {
-      console.error('서버 요청 중 오류가 발생했습니다:', error)
-    }
-  }
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      setSelectedImage(event.target.files[0])
-    }
-  }
+const SchedulePage = () => {
+  const form = useForm()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">여행 상품 등록</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <div className="space-y-4">
+    <>
+      <main className="container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <Label htmlFor="trip_title">여행 제목</Label>
-            <Input id="trip_title" {...register('trip_title', { required: '여행 제목은 필수입니다' })} />
-            {errors.trip_title && <p className="text-red-500 text-sm mt-1">{errors.trip_title.message}</p>}
+            <h2 className="text-xl font-bold mb-4">제주도 여행 패키지</h2>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">1일차</h3>
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-lg font-medium">09:00</div>
+                          <div className="font-semibold">
+                            제주 올레길 트레킹
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            아름다운 해안선을 따라 걷기
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            제주 서귀포시
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-lg font-medium">18:00</div>
+                          <div className="font-semibold">흑돼지 맛집 방문</div>
+                          <div className="text-sm text-gray-500">
+                            제주 흑돼지 비비큐 체험
+                          </div>
+                          <div className="text-sm text-gray-500">맛집 이름</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">2일차</h3>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="text-lg font-medium">09:00</div>
+                        <div className="font-semibold">한라산 등반</div>
+                        <div className="text-sm text-gray-500">
+                          한라산 정상 등반 및 경관 감상
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          한라산국립공원
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
+
           <div>
-            <Label htmlFor="trip_description">여행 설명</Label>
-            <Textarea id="trip_description" {...register('trip_description', { required: '여행 설명은 필수입니다' })} />
-            {errors.trip_description && <p className="text-red-500 text-sm mt-1">{errors.trip_description.message}</p>}
-          </div>
-          <div>
-            <Label htmlFor="trip_price">가격</Label>
-            <Input type="number" id="trip_price" {...register('trip_price', { required: '가격은 필수입니다', min: 0 })} />
-            {errors.trip_price && <p className="text-red-500 text-sm mt-1">{errors.trip_price.message}</p>}
-          </div>
-          <div>
-            <Label htmlFor="trip_start">시작 날짜</Label>
-            <Input type="date" id="trip_start" {...register('trip_start', { required: '시작 날짜는 필수입니다' })} />
-            {errors.trip_start && <p className="text-red-500 text-sm mt-1">{errors.trip_start.message}</p>}
-          </div>
-          <div>
-            <Label htmlFor="trip_end">종료 날짜</Label>
-            <Input type="date" id="trip_end" {...register('trip_end', { required: '종료 날짜는 필수입니다' })} />
-            {errors.trip_end && <p className="text-red-500 text-sm mt-1">{errors.trip_end.message}</p>}
-          </div>
-          <div>
-            <Label>이미지 업로드</Label>
-            <Input type="file" accept="image/*" onChange={handleFileChange} />
-            {selectedImage && (
-              <p className="mt-2 text-sm">{selectedImage.name}</p>
-            )}
+            <Card>
+              <CardHeader>
+                <h2 className="text-xl font-bold">일정 수정</h2>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form className="space-y-6">
+                    <FormField
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>일정 제목</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="일정 제목을 입력하세요"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>일정 설명</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="일정에 대한 설명을 입력하세요"
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>위치</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="일정 위치를 입력하세요"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>날짜</FormLabel>
+                          <FormControl>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    'w-full justify-start text-left font-normal',
+                                    !field.value && 'text-muted-foreground',
+                                  )}
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value
+                                    ? format(field.value, 'PPP', { locale: ko })
+                                    : '날짜를 선택하세요'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        name="startTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>시작 시간</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        name="endTime"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>종료 시간</FormLabel>
+                            <FormControl>
+                              <Input type="time" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      name="budget"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>예상 경비</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <span className="absolute left-3 top-2.5">$</span>
+                              <Input
+                                className="pl-7"
+                                type="number"
+                                placeholder="0"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <Button className="w-full" type="submit">
+                      저장하기
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
           </div>
         </div>
-        {/* 일정 추가 부분은 기존 코드 유지 */}
-        <Button type="submit" className="w-full">여행 상품 등록</Button>
-      </form>
-    </div>
+      </main>
+    </>
   )
 }
+
+export default SchedulePage
