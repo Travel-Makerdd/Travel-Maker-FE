@@ -8,13 +8,6 @@ import { Plane, Plus } from 'lucide-react'
 export default function TravelMakerForm() {
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
-          <Plane className="w-8 h-8" />
-          <h1 className="text-xl font-bold">Travel Maker : 여행을 더 쉽게</h1>
-        </div>
-      </div>
-
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-4">상품 등록</h2>
         <Button variant="secondary" className="ml-auto">
