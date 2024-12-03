@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -23,17 +23,79 @@ import {
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { Label } from '@/components/ui/label'
 
 const SchedulePage = () => {
   const form = useForm()
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
 
   return (
     <>
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          <div className="col-span-1">
+            <Label htmlFor="productName">상품명</Label>
+            <Input id="productName" placeholder="여행 패키지 이름" />
+          </div>
+          <div className="w-full flex justify-center col-span-1">
+            <div>
+              <Label htmlFor="startDate">시작일</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? startDate.toLocaleDateString() : '날짜 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={(date) => setStartDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="ml-4">
+              <Label htmlFor="endDate">종료일</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? endDate.toLocaleDateString() : '날짜 선택'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={(date) => setEndDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="col-span-1">
+            <Textarea placeholder="여행 패키지에 대한 설명을 입력하세요." />
+          </div>
+          <div className="col-span-1">
+            <Input type="file" />
+          </div>
+        </div>
+      </div>
+
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
           <div>
-            <h2 className="text-xl font-bold mb-4">제주도 여행 패키지</h2>
-
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">1일차</h3>
