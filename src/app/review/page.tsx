@@ -1,54 +1,50 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useAuth } from '@/app/context/AuthContext'
 
 interface Review {
-  id: number
-  title: string
-  content: string
-  rating: number
-  user: {
-    name: string
-  }
-  createdAt: string
+  reviewId: number
+  tripId: number
+  userId: number
+  tripTitle: string
+  reviewRating: number
+  reviewContent: string
+  updatedAt: string
 }
 
 export default function ReviewsPage() {
-  // 서버로부터 받아올 리뷰 데이터 예시
-  const reviews: Review[] = [
-    {
-      id: 1,
-      title: '만족스러운 맛집 탐방',
-      content: '지역의 유명한 맛집을 탐방하는 패키지',
-      rating: 4.5,
-      user: {
-        name: 'testUser'
-      },
-      createdAt: '2024년 9월'
-    },
-    {
-      id: 2,
-      title: '취향 저격 여행',
-      content: '평화로운 자연을 만끽할 수 있는 패키지',
-      rating: 5,
-      user: {
-        name: 'testUser'
-      },
-      createdAt: '2022년 12월'
-    },
-    {
-      id: 3,
-      title: '형편 없는 숙소',
-      content: '별레들이 가득해 잠을 잘 수 없음',
-      rating: 1.5,
-      user: {
-        name: 'testUser'
-      },
-      createdAt: '2023년 6월'
+  const { auth } = useAuth()
+  const [reviews, setReviews] = useState<Review[]>([])
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!auth.token) {
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/review/checkAll`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        })
+
+        const result = await response.json()
+        if (result.status === 200) {
+          setReviews(result.data)
+        }
+      } catch (error) {
+        console.error('Error fetching reviews:', error)
+      }
     }
-  ]
+
+    fetchReviews()
+  }, [auth.token])
 
   const RatingStars = ({ rating }: { rating: number }) => {
     return (
@@ -56,7 +52,7 @@ export default function ReviewsPage() {
         {[1, 2, 3, 4, 5].map((star) => {
           const isFilled = star <= Math.floor(rating)
           const isHalf = star === Math.ceil(rating) && rating % 1 !== 0
-          
+
           return (
             <Star
               key={star}
@@ -88,20 +84,24 @@ export default function ReviewsPage() {
       <h1 className="text-2xl font-bold mb-6">나의 리뷰</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {reviews.map((review) => (
-          <Card key={review.id} className="overflow-hidden">
+          <Card key={review.reviewId} className="overflow-hidden">
             <CardHeader className="space-y-2">
-              <RatingStars rating={review.rating} />
-              <h2 className="font-semibold text-xl">{review.title}</h2>
-              <p className="text-sm text-muted-foreground">{review.content}</p>
+              <RatingStars rating={review.reviewRating} />
+              <h2 className="font-semibold text-xl">{review.tripTitle}</h2>
+              <p className="text-sm text-muted-foreground">
+                {review.reviewContent}
+              </p>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{review.user.name[0]}</AvatarFallback>
+                  <AvatarFallback>{review.userId}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium">{review.user.name}</span>
-                  <span className="text-xs text-muted-foreground">{review.createdAt}</span>
+                  <span className="text-sm font-medium">{review.userId}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(review.updatedAt).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
             </CardContent>
