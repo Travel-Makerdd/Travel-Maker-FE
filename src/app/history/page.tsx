@@ -36,6 +36,7 @@ export default function HistoryPage() {
   const [reviewContent, setReviewContent] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false)
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -105,13 +106,36 @@ export default function HistoryPage() {
     setIsReviewModalOpen(true)
   }
 
-  const handleReviewSubmit = () => {
-    // TODO: 서버로 리뷰 데이터 전송 로직 구현
-    console.log('리뷰 제출:', {
-      reservationId: selectedReservation,
-      rating: reviewRating,
-      content: reviewContent,
-    })
+  const handleReviewSubmit = async () => {
+    if (!auth.token || selectedReservation === null) {
+      return // Ensure token and reservation ID are available
+    }
+
+    const reviewData = {
+      tripId: selectedReservation, // Assuming selectedReservation is the tripId
+      reviewRating,
+      reviewContent,
+    }
+
+    try {
+      const response = await fetch('/api/review/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${auth.token}`,
+        },
+        body: JSON.stringify(reviewData),
+      })
+
+      const result = await response.json()
+      if (result.status === 201) {
+        setIsReviewDialogOpen(true) // Open success dialog
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+    }
+
+    // Reset review form
     setIsReviewModalOpen(false)
     setSelectedReservation(null)
     setReviewRating(0)
@@ -314,6 +338,27 @@ export default function HistoryPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              리뷰 작성 완료
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm">리뷰가 작성되었습니다.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsReviewDialogOpen(false)}
+            >
               확인
             </Button>
           </DialogFooter>
