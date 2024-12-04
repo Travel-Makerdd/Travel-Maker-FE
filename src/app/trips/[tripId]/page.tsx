@@ -28,6 +28,17 @@ interface TripData {
   schedules: any // Adjust type as necessary
 }
 
+// Define a Review interface to type the fetched data
+interface Review {
+  reviewId: number
+  tripId: number
+  userId: number
+  tripTitle: string
+  reviewRating: number
+  reviewContent: string
+  updatedAt: string
+}
+
 export default function TravelBooking() {
   const { auth } = useAuth()
   const pathname = usePathname()
@@ -39,6 +50,7 @@ export default function TravelBooking() {
   const [dialogTitle, setDialogTitle] = useState('예약 결과') // Default title
   const [dialogDescription, setDialogDescription] =
     useState('예약이 성공적으로 생성되었습니다.') // Default description
+  const [reviews, setReviews] = useState<Review[]>([]) // State to hold reviews
 
   useEffect(() => {
     const fetchTripData = async () => {
@@ -85,6 +97,32 @@ export default function TravelBooking() {
     }
 
     fetchTripData()
+  }, [auth.token, tripId])
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!auth.token) {
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/review/check/${tripId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        })
+
+        const result = await response.json()
+        if (result.status === 200) {
+          setReviews(result.data) // Set the fetched reviews
+        }
+      } catch (error) {
+        console.error('Error fetching reviews:', error)
+      }
+    }
+
+    fetchReviews()
   }, [auth.token, tripId])
 
   const handleFavoriteToggle = async () => {
@@ -230,65 +268,49 @@ export default function TravelBooking() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
-        {[
-          {
-            rating: 5,
-            title: '만족스러운 맛집 탐방',
-            description: '지역의 유명한 맛집을 탐방하는 패키지',
-            author: '남궁민',
-            date: '2024년 9월',
-            image: '/images/placeholder.svg',
-          },
-          {
-            rating: 5,
-            title: '취향 저격 여행',
-            description: '평화로운 자연을 만끽할 수 있는 패키지',
-            author: '김정은',
-            date: '2022년 12월',
-            image: '/images/placeholder.svg',
-          },
-          {
-            rating: 5,
-            title: '형편 없는 숙소',
-            description: '별레들이 가득해 참을 찿 수 없음',
-            author: '도건우',
-            date: '2023년 6월',
-            image: '/images/placeholder.svg',
-          },
-        ].map((review, index) => (
-          <Card key={index}>
-            <CardContent className="p-4 space-y-4">
-              <div className="flex gap-1">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < review.rating
-                        ? 'fill-primary'
-                        : 'fill-muted stroke-muted-foreground'
-                    }`}
-                  />
-                ))}
-              </div>
-              <div>
-                <h3 className="font-medium">{review.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {review.description}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={review.image} alt={review.author} />
-                  <AvatarFallback>{review.author[0]}</AvatarFallback>
-                </Avatar>
-                <div className="text-sm">
-                  <div>{review.author}</div>
-                  <div className="text-muted-foreground">{review.date}</div>
+        {reviews.length === 0 ? (
+          <div className="text-center text-gray-500">리뷰가 없습니다</div> // Display message when there are no reviews
+        ) : (
+          reviews.map((review) => (
+            <Card key={review.reviewId}>
+              <CardContent className="p-4 space-y-4">
+                <div className="flex gap-1">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-4 h-4 ${
+                        i < review.reviewRating
+                          ? 'fill-primary'
+                          : 'fill-muted stroke-muted-foreground'
+                      }`}
+                    />
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div>
+                  <h3 className="font-medium">{review.tripTitle}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {review.reviewContent}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage
+                      src="/images/placeholder.svg"
+                      alt="User Avatar"
+                    />
+                    <AvatarFallback>{review.userId}</AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm">
+                    <div>{review.userId}</div>
+                    <div className="text-muted-foreground">
+                      {new Date(review.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
     </div>
   )
