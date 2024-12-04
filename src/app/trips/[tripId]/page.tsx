@@ -9,12 +9,23 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/app/context/AuthContext'
 import { usePathname } from 'next/navigation'
 
+interface TripData {
+  tripId: number
+  tripTitle: string
+  tripDescription: string
+  tripImageUrls: string[]
+  tripPrice: number
+  startDate: string
+  endDate: string
+  schedules: any // Adjust type as necessary
+}
+
 export default function TravelBooking() {
   const { auth } = useAuth()
   const pathname = usePathname()
   const tripId = pathname.split('/').pop() // Extract tripId from the pathname
-  const [tripData, setTripData] = useState(null)
-  const [imageUrls, setImageUrls] = useState<{ [key: number]: string }>({}) // To store fetched image URLs
+  const [tripData, setTripData] = useState<TripData | null>(null)
+  const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({}) // Specify the type for imageUrls
   const [isFavorited, setIsFavorited] = useState(false)
 
   useEffect(() => {
@@ -35,7 +46,7 @@ export default function TravelBooking() {
           setTripData(result.data)
 
           // Fetch images for each trip
-          result.data.tripImageUrls.forEach(async (imageUrl) => {
+          result.data.tripImageUrls.forEach(async (imageUrl: string) => {
             const imageResponse = await fetch(imageUrl, {
               method: 'GET',
               headers: {
@@ -45,7 +56,10 @@ export default function TravelBooking() {
             if (imageResponse.ok) {
               const imageBlob = await imageResponse.blob()
               const imageUrlBlob = URL.createObjectURL(imageBlob)
-              setImageUrls((prev) => ({ ...prev, [tripId]: imageUrlBlob }))
+              setImageUrls((prev) => ({
+                ...prev,
+                [tripId as string]: imageUrlBlob,
+              }))
             } else {
               console.error('Failed to fetch image:', imageResponse.statusText)
             }
@@ -100,7 +114,11 @@ export default function TravelBooking() {
         <div className="relative flex-shrink-0 md:w-1/2">
           <div className="aspect-[16/9] bg-muted rounded-lg overflow-hidden">
             <img
-              src={imageUrls[tripId] || '/images/placeholder.svg'} // Use fetched image or placeholder
+              src={
+                tripId && imageUrls[tripId]
+                  ? imageUrls[tripId]
+                  : '/images/placeholder.svg'
+              } // Use fetched image or placeholder
               alt="Travel destination"
               className="w-full h-full object-cover"
             />
