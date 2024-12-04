@@ -8,6 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/app/context/AuthContext'
 import { usePathname } from 'next/navigation'
+import {
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogTitle,
+  DialogHeader,
+  DialogContent,
+} from '@/components/ui/dialog'
 
 interface TripData {
   tripId: number
@@ -27,6 +35,10 @@ export default function TravelBooking() {
   const [tripData, setTripData] = useState<TripData | null>(null)
   const [imageUrls, setImageUrls] = useState<{ [key: string]: string }>({}) // Specify the type for imageUrls
   const [isFavorited, setIsFavorited] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [dialogTitle, setDialogTitle] = useState('예약 결과') // Default title
+  const [dialogDescription, setDialogDescription] =
+    useState('예약이 성공적으로 생성되었습니다.') // Default description
 
   useEffect(() => {
     const fetchTripData = async () => {
@@ -102,6 +114,34 @@ export default function TravelBooking() {
     }
   }
 
+  const handleReservation = async () => {
+    if (!auth.token) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/reservation/create/${tripId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        },
+      })
+
+      const result = await response.json()
+      if (result.status === 201) {
+        setDialogTitle('예약 성공') // Set title for success
+        setDialogDescription('예약이 완료되었습니다.') // Set description for success
+        setIsDialogOpen(true)
+      } else if (result.status === 409) {
+        setDialogTitle('예약 실패') // Set title for failure
+        setDialogDescription('이미 예약된 여행 상품입니다.') // Set description for duplicate reservation
+        setIsDialogOpen(true) // Open dialog for duplicate reservation
+      }
+    } catch (error) {
+      console.error('Error creating reservation:', error)
+    }
+  }
+
   if (!tripData) {
     return <div>Loading...</div> // Show loading state while fetching data
   }
@@ -166,9 +206,20 @@ export default function TravelBooking() {
             </div>
           </div>
 
-          <Button className="w-full bg-zinc-900 text-white hover:bg-zinc-800">
+          <Button
+            className="w-full bg-zinc-900 text-white hover:bg-zinc-800"
+            onClick={handleReservation} // Call handleReservation on button click
+          >
             예약하기
           </Button>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+              <DialogTitle>{dialogTitle}</DialogTitle>
+              <DialogDescription>{dialogDescription}</DialogDescription>
+              <DialogClose>확인</DialogClose>
+            </DialogContent>
+          </Dialog>
 
           <Card className="border-dashed">
             <CardContent className="p-4 text-sm text-muted-foreground">
