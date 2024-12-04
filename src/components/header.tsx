@@ -8,18 +8,45 @@ import { useAuth } from '@/app/context/AuthContext';
 
 export const Header = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const { auth } = useAuth();
-    const route = useRouter();
+    const { auth, logout } = useAuth(); // logout 함수로 로그인 상태 초기화
+    const router = useRouter();
 
-    // 최신 auth 값을 확인하기 위한 useEffect
     useEffect(() => {
         if (isOpen) {
-            console.log('Sidebar opened. Current auth state:', auth); // 슬라이드바가 열릴 때 auth 값 출력
+            console.log('Sidebar opened. Current auth state:', auth);
         }
-    }, [isOpen, auth]); // isOpen과 auth 상태 변경 시 실행
+    }, [isOpen, auth]);
 
     const toggleSide = () => {
         setIsOpen(!isOpen);
+    };
+
+    const handleWithdraw = async () => {
+        if (!auth.token) return;
+
+        const confirmWithdraw = confirm('정말로 회원 탈퇴하시겠습니까?');
+        if (!confirmWithdraw) return;
+
+        try {
+            const response = await fetch('/api/withdraw', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${auth.token}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`회원 탈퇴에 실패했습니다: ${response.status}`);
+            }
+
+            alert('회원 탈퇴가 완료되었습니다.');
+            logout(); // auth 상태 초기화
+            router.push('/'); // 메인 페이지로 이동
+        } catch (err) {
+            console.error('Error during withdrawal:', err);
+            alert('회원 탈퇴 중 문제가 발생했습니다. 다시 시도해주세요.');
+        }
     };
 
     return (
@@ -27,11 +54,11 @@ export const Header = () => {
             <header className="border-b">
                 <div className="flex items-center justify-between h-16 w-full px-6">
                     <div className="flex items-center gap-4 pl-6">
-                        <Plane className="h-6 w-6" onClick={() => route.push('/')} />
+                        <Plane className="h-6 w-6" onClick={() => router.push('/')} />
                         <h1 className="font-bold text-xl">Travel Maker : 여행을 더 쉽게</h1>
                     </div>
 
-                    <div className="flex items-center gap-4 ">
+                    <div className="flex items-center gap-4">
                         <Bell className="h-5 w-10" />
                         <History className="h-5 w-5" />
                         <Button variant="ghost" size="icon" className="mr-0" onClick={toggleSide}>
@@ -75,62 +102,78 @@ export const Header = () => {
                             </div>
                         </div>
                     </div>
-                    <nav className="flex-1 overflow-y-auto">
-                        <div className="flex flex-col p-4">
-                            {auth.isLoggedIn ? (
-                                <>
+                    <nav className="flex-1 overflow-y-auto flex flex-col p-4">
+                        {auth.isLoggedIn ? (
+                            <>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start h-11"
+                                    onClick={() => router.push('/profile')}
+                                >
+                                    프로필
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start h-11"
+                                    onClick={() => router.push('/history')}
+                                >
+                                    예약 내역
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start h-11"
+                                    onClick={() => router.push('/favorite/trip')}
+                                >
+                                    여행상품 즐겨찾기
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start h-11"
+                                    onClick={() => router.push('/favorite/post')}
+                                >
+                                    게시글 즐겨찾기
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="justify-start h-11"
+                                    onClick={() => router.push('/review')}
+                                >
+                                    나의 리뷰
+                                </Button>
+                                {auth.role === 'GUIDE' && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start h-11"
+                                            onClick={() => router.push('/trips/register')}
+                                        >
+                                            상품 등록
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            className="justify-start h-11"
+                                            onClick={() => router.push('/product/edit')}
+                                        >
+                                            상품 수정
+                                        </Button>
+                                    </>
+                                )}
+                                {/* 회원탈퇴 버튼 */}
+                                <div className="mt-auto">
                                     <Button
                                         variant="ghost"
-                                        className="justify-start h-11"
-                                        onClick={() => route.push('/profile')}
+                                        className="justify-start h-11 text-gray-300"
+                                        onClick={handleWithdraw}
                                     >
-                                        프로필
+                                        회원탈퇴
                                     </Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="justify-start h-11"
-                                        onClick={() => route.push('/history')}
-                                    >
-                                        예약 내역
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="justify-start h-11"
-                                        onClick={() => route.push('/favorite')}
-                                    >
-                                        즐겨찾기
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        className="justify-start h-11"
-                                        onClick={() => route.push('/review')}
-                                    >
-                                        나의 리뷰
-                                    </Button>
-                                    {auth.role === 'GUIDE' && ( // GUIDE 역할만 접근 가능
-                                        <>
-                                            <Button
-                                                variant="ghost"
-                                                className="justify-start h-11"
-                                                onClick={() => route.push('/trips/register')}
-                                            >
-                                                상품 등록
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                className="justify-start h-11"
-                                                onClick={() => route.push('/product/edit')}
-                                            >
-                                                상품 수정
-                                            </Button>
-                                        </>
-                                    )}
-                                </>
-                            ) : (
-                                <p className="text-muted-foreground">로그인 후 이용 가능합니다.</p>
-                            )}
-                        </div>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-muted-foreground">로그인 후 이용 가능합니다.</p>
+                        )}
                     </nav>
+
                 </div>
             </div>
         </>
