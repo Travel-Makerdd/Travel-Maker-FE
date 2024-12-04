@@ -1,4 +1,6 @@
-import React from 'react'
+'use client'
+
+import React, { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,46 +13,49 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Star, MapPin, Search } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
 
-export default function TravelPackageSearch() {
-  const destinations = [
-    {
-      name: '제주 올레길 트레킹 패키지',
-      type: '모험',
-      rating: 4.5,
-      image: '/placeholder.svg',
-    },
-    {
-      name: '도쿄 미식 여행 디럭스',
-      type: '럭셔리',
-      rating: 4.7,
-      image: '/placeholder.svg',
-    },
-    {
-      name: '파리 로맨스 허니문 스페셜',
-      type: '허니문',
-      rating: 4.6,
-      image: '/placeholder.svg',
-    },
-    {
-      name: '뉴욕 패밀리 펀 어드벤처',
-      type: '가족여행',
-      rating: 4.4,
-      image: '/placeholder.svg',
-    },
-    {
-      name: '시드니 서퍼 파라다이스',
-      type: '모험',
-      rating: 4.3,
-      image: '/placeholder.svg',
-    },
-    {
-      name: '방콕 버짓 익스플로러',
-      type: '저가',
-      rating: 4.2,
-      image: '/placeholder.svg',
-    },
-  ]
+interface Trip {
+  tripId: number
+  tripTitle: string
+  tripDescription: string
+  tripImageUrls: string[]
+  tripPrice: number
+  startDate: string
+  endDate: string
+  schedules: any // Adjust type as necessary
+}
+
+const TravelPackageSearch = () => {
+  const { auth } = useAuth()
+  const [destinations, setDestinations] = useState<Trip[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const response = await fetch('/api/trip/checkAll', {
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        })
+        const result = await response.json()
+        if (result.status === 200) {
+          setDestinations(result.data)
+        }
+      } catch (error) {
+        console.error('Error fetching trip data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTrips()
+  }, [])
+
+  if (loading) {
+    return <div>Loading...</div> // Show a loading state while fetching data
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -72,42 +77,30 @@ export default function TravelPackageSearch() {
         </div>
       </header>
 
-      <Tabs defaultValue="all" className="mb-12">
-        <TabsList className="justify-center">
-          <TabsTrigger value="all">전체</TabsTrigger>
-          <TabsTrigger value="honeymoon">허니문</TabsTrigger>
-          <TabsTrigger value="family">가족여행</TabsTrigger>
-          <TabsTrigger value="adventure">모험</TabsTrigger>
-          <TabsTrigger value="luxury">럭셔리</TabsTrigger>
-          <TabsTrigger value="budget">저가</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
       <section className="mb-16">
         <h2 className="text-2xl font-semibold mb-6">인기 여행상품</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {destinations.map((pack, index) => (
-            <Card key={index} className="overflow-hidden">
+          {destinations.map((pack) => (
+            <Card key={pack.tripId} className="overflow-hidden">
               <img
-                src={pack.image}
-                alt={`${pack.name} 이미지`}
+                src={pack.tripImageUrls[0] || '/placeholder.svg'} // Fallback image
+                alt={`${pack.tripTitle} 이미지`}
                 className="w-full h-48 object-cover"
               />
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl">{pack.name}</CardTitle>
-                  <Badge variant="secondary">{pack.type}</Badge>
+                  <CardTitle className="text-xl">{pack.tripTitle}</CardTitle>
+                  <Badge variant="secondary">{pack.tripPrice} 원</Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center mb-2">
                   <MapPin className="w-4 h-4 mr-1 text-gray-500" />
-                  <span className="text-sm text-gray-600">{pack.type}</span>
+                  <span className="text-sm text-gray-600">
+                    {pack.startDate} - {pack.endDate}
+                  </span>
                 </div>
-                <div className="flex items-center">
-                  <Star className="w-4 h-4 mr-1 text-yellow-400" />
-                  <span className="text-sm font-semibold">{pack.rating}</span>
-                </div>
+                <p className="text-sm text-gray-600">{pack.tripDescription}</p>
               </CardContent>
               <CardFooter>
                 <Button className="w-full">상세 정보</Button>
@@ -153,3 +146,5 @@ export default function TravelPackageSearch() {
     </div>
   )
 }
+
+export default TravelPackageSearch
