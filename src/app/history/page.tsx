@@ -95,6 +95,7 @@ export default function HistoryPage() {
         setIsModalOpen(false) // Close the cancel confirmation modal
         setSelectedReservation(null) // Clear the selected reservation
         setIsDialogOpen(true) // Open success dialog
+        window.location.reload()
       }
     } catch (error) {
       console.error('Error canceling reservation:', error)
