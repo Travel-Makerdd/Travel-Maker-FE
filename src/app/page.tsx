@@ -111,7 +111,7 @@ const MainPage = () => {
               </Button>
               <Button 
                 className="w-full bg-black hover:bg-blue-600 text-white" 
-                onClick={() => route.push("/community")}
+                onClick={() => route.push("/trips")}
               >
                 여행상품 바로가기
               </Button>
