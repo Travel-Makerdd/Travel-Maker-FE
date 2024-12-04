@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { MessageSquare, Star, Bell, HelpCircle, Menu } from 'lucide-react'
+import { MessageSquare, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../context/AuthContext'
@@ -12,9 +12,10 @@ interface Post {
     postId: number
     postTitle: string
     postContentPreview: string
-    postImageUrl: string
+    postImageUrls: string[] // 서버로부터 받은 이미지 URL 배열
     commentCount: number
     favoriteCount: number
+    imageBlobUrls?: string[] // Blob으로 변환한 이미지 URL 배열
 }
 
 interface PostsResponse {
@@ -28,65 +29,92 @@ interface PostsResponse {
     message: string
 }
 
-const MOCK_POSTS: Post[] = [
-    {
-        postId: 1,
-        postTitle: "제주도에서의 아름다운 일출",
-        postContentPreview: "제주도 성산일출봉에서 맞이한 감동적인 일출 장면입니다. 이른 아침부터 일어나 힘들게 올라갔지만, 그 경치는 정말 끝내줬어요!",
-        postImageUrl: "/placeholder.svg?height=400&width=600",
-        commentCount: 15,
-        favoriteCount: 32
-    },
-    {
-        postId: 2,
-        postTitle: "서울 야경 구경하기",
-        postContentPreview: "남산 타워에서 바라본 서울의 야경은 정말 환상적이었어요. 도시의 불빛들이 만들어내는 풍경이 마치 별자리 같았죠.",
-        postImageUrl: "/placeholder.svg?height=400&width=600",
-        commentCount: 8,
-        favoriteCount: 24
-    },
-    {
-        postId: 3,
-        postTitle: "부산 해운대 비치 여행",
-        postContentPreview: "부산 해운대에서의 즐거운 시간! 모래사장을 걸으며 시원한 바다 바람을 맞으니 정말 상쾌했어요. 근처 맛집 투어도 잊지 않았죠.",
-        postImageUrl: "/placeholder.svg?height=400&width=600",
-        commentCount: 21,
-        favoriteCount: 45
-    }
-];
-
 export default function PostsPage() {
     const [posts, setPosts] = useState<Post[]>([])
-    const route = useRouter();
-    const { auth } = useAuth();
-    useEffect(() => {
-        // 실제 API 연동 시 이 부분을 주석 해제하고 사용하세요
-        // const fetchPosts = async () => {
-        //   try {
-        //     const response = await fetch('/api/posts')
-        //     const data: PostsResponse = await response.json()
-        //     setPosts(data.data.posts)
-        //   } catch (error) {
-        //     console.error('Failed to fetch posts:', error)
-        //   }
-        // }
-        // fetchPosts()
+    const { auth } = useAuth()
+    const router = useRouter()
 
-        // 가짜 데이터 사용
-        setPosts(MOCK_POSTS);
-    }, [])
+    useEffect(() => {
+        const fetchPosts = async () => {
+            try {
+                // 게시글 데이터 가져오기
+                const response = await fetch('/api/post', {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${auth.token}`,
+                    },
+                })
+
+                if (!response.ok) {
+                    throw new Error("게시글 데이터를 가져오는 데 실패했습니다.")
+                }
+
+                const result: PostsResponse = await response.json()
+
+                // 이미지 요청 로직
+                const postsWithImages = await Promise.all(
+                    result.data.posts.map(async (post) => {
+                        if (!post.postImageUrls || post.postImageUrls.length === 0) {
+                            return post // 이미지 URL이 없는 경우 원본 반환
+                        }
+
+                        try {
+                            const imageBlobUrls = await Promise.all(
+                                post.postImageUrls.map(async (url) => {
+                                    const imageName = url.split('/').pop()
+                                    const imageResponse = await fetch(
+                                        `/api/post/check/${post.postId}/image/${imageName}`,
+                                        {
+                                            method: 'GET',
+                                            headers: {
+                                                Authorization: `Bearer ${auth.token}`,
+                                            },
+                                        }
+                                    )
+
+                                    if (!imageResponse.ok) {
+                                        throw new Error(`이미지를 가져오는 데 실패했습니다: ${imageResponse.statusText}`)
+                                    }
+
+                                    const blob = await imageResponse.blob()
+                                    return URL.createObjectURL(blob)
+                                })
+                            )
+
+                            return {
+                                ...post,
+                                imageBlobUrls,
+                            }
+                        } catch (err) {
+                            console.error(err)
+                            return {
+                                ...post,
+                                imageBlobUrls: [], // 실패 시 빈 배열 처리
+                            }
+                        }
+                    })
+                )
+
+                setPosts(postsWithImages)
+            } catch (err) {
+                console.error(err)
+            }
+        }
+
+        fetchPosts()
+    }, [auth.token])
 
     const handleCreatePostClick = () => {
         if (!auth.isLoggedIn) {
-            alert("로그인이 필요합니다.");
+            alert("로그인이 필요합니다.")
         } else {
-            route.push("/community/createpost"); // 게시글 등록 페이지로 이동
+            router.push("/community/createpost")
         }
     }
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
                 <div className="flex justify-between items-center mb-8">
                     <h2 className="text-3xl font-bold">커뮤니티</h2>
@@ -99,14 +127,16 @@ export default function PostsPage() {
                     {posts.map((post) => (
                         <Link key={post.postId} href={`/community/${post.postId}`}>
                             <div className="border rounded-lg overflow-hidden bg-white cursor-pointer hover:shadow-lg transition-shadow duration-300">
-                                <div className="relative h-64">
-                                    <Image
-                                        src={post.postImageUrl}
-                                        alt={post.postTitle}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
+                                {post.imageBlobUrls && post.imageBlobUrls.length > 0 && (
+                                    <div className="relative h-64">
+                                        <Image
+                                            src={post.imageBlobUrls[0]} // 첫 번째 이미지만 표시
+                                            alt={post.postTitle}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                )}
                                 <div className="p-4">
                                     <h3 className="text-xl font-bold mb-2">{post.postTitle}</h3>
                                     <p className="text-gray-600 mb-4 line-clamp-2">
@@ -131,4 +161,3 @@ export default function PostsPage() {
         </div>
     )
 }
-
