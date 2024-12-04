@@ -13,10 +13,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
-import TripRegisterForm from './form'
+import ScheduleForm from './schedule-form'
 import TripInfo from './trip-info'
 import TripInfo2 from './trip-info-2'
 import { TripData } from './trip-type'
+import { mockTripData } from './mock-trip-data'
+import TripSchedule from './trip-schedule'
+import { differenceInDays } from 'date-fns'
 
 const SchedulePage = () => {
   const [tripData, setTripData] = useState<TripData>({
@@ -30,105 +33,38 @@ const SchedulePage = () => {
   })
 
   useEffect(() => {
-    console.log(tripData)
-  }, [tripData])
+    // trip_start와 trip_end가 모두 있을 때만 실행
+    if (tripData.trip_start && tripData.trip_end) {
+      const startDate = new Date(tripData.trip_start)
+      const endDate = new Date(tripData.trip_end)
+
+      // 시작일이 종료일보다 늦은 경우 처리하지 않음
+      if (startDate > endDate) return
+
+      // 여행 일수 계산 (종료일 포함)
+      const daysDiff = differenceInDays(endDate, startDate) + 1
+
+      // 일차별 빈 일정 생성
+      const newScheduleDays = Array.from({ length: daysDiff }, (_, index) => ({
+        scheduleDay: index + 1,
+        activities: [],
+      }))
+
+      setTripData((prev) => ({
+        ...prev,
+        schedual_day: newScheduleDays,
+      }))
+    }
+  }, [tripData.trip_start, tripData.trip_end])
 
   return (
     <>
-      {/* 여행상품 기본 정보 */}
-      {/* <TripInfo /> */}
       <TripInfo2 tripData={tripData} setTripData={setTripData} />
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">1일차</h3>
-                <div className="space-y-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-lg font-medium">09:00</div>
-                          <div className="font-semibold">
-                            제주 올레길 트레킹
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            아름다운 해안선을 따라 걷기
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            제주 서귀포시
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="text-lg font-medium">18:00</div>
-                          <div className="font-semibold">흑돼지 맛집 방문</div>
-                          <div className="text-sm text-gray-500">
-                            제주 흑돼지 비비큐 체험
-                          </div>
-                          <div className="text-sm text-gray-500">맛집 이름</div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">2일차</h3>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="text-lg font-medium">09:00</div>
-                        <div className="font-semibold">한라산 등반</div>
-                        <div className="text-sm text-gray-500">
-                          한라산 정상 등반 및 경관 감상
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          한라산국립공원
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-
-          <TripRegisterForm />
+          <TripSchedule tripData={tripData} />
+          <ScheduleForm />
         </div>
       </main>
     </>

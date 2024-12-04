@@ -21,7 +21,7 @@ import {
   FormLabel,
 } from '@/components/ui/form'
 
-const TripRegisterForm = () => {
+const ScheduleForm = () => {
   const form = useForm()
 
   return (
@@ -165,4 +165,4 @@ const TripRegisterForm = () => {
   )
 }
 
-export default TripRegisterForm
+export default ScheduleForm

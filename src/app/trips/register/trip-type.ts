@@ -1,20 +1,23 @@
+type Activity = {
+  activityTime: string // Time of the activity
+  activityTitle: string // Title of the activity
+  activityContent: string // Description of the activity
+  activityExpense: number // Expense for the activity
+}
+
 type TripSchedule = {
-  activity: {
-    acivity_time: string
-    acivity_title: string
-    activity_content: string
-    activity_expense: number
-  }[]
+  scheduleDay: number // Day of the schedule
+  activities: Activity[] // List of activities for the day
 }
 
 type TripData = {
-  trip_title: string
-  trip_description: string
-  trip_price: number
-  trip_start: string // ISO date string
-  trip_end: string // ISO date string
-  tripImageUrls: File[]
-  schedual_day: TripSchedule[]
+  trip_title: string // Title of the trip
+  trip_description: string // Description of the trip
+  trip_price: number // Price of the trip
+  trip_start: string // ISO date string for start date
+  trip_end: string // ISO date string for end date
+  tripImageUrls: File[] // Array of image files
+  schedual_day: TripSchedule[] // Array of scheduled days
 }
 
-export type { TripData, TripSchedule }
+export type { TripData, TripSchedule, Activity }
