@@ -65,6 +65,8 @@ const SchedulePage = () => {
 
   return (
     <>
+      <Button onClick={() => console.log(tripData)}>데이터 조회</Button>
+
       <TripInfo2 tripData={tripData} setTripData={setTripData} />
 
       <main className="container mx-auto px-4 py-8">
