@@ -35,6 +35,7 @@ export default function HistoryPage() {
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewContent, setReviewContent] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   useEffect(() => {
     const fetchReservations = async () => {
@@ -72,10 +73,31 @@ export default function HistoryPage() {
     setIsModalOpen(true)
   }
 
-  const handleConfirmCancel = () => {
-    // TODO: 서버와 통신하는 로직 구현
-    setIsModalOpen(false)
-    setSelectedReservation(null)
+  const handleConfirmCancel = async () => {
+    if (!auth.token || selectedReservation === null) {
+      return // Ensure token and reservation ID are available
+    }
+
+    try {
+      const response = await fetch(
+        `/api/reservation/delete/${selectedReservation}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        },
+      )
+
+      const result = await response.json()
+      if (result.status === 200) {
+        setIsModalOpen(false) // Close the cancel confirmation modal
+        setSelectedReservation(null) // Clear the selected reservation
+        setIsDialogOpen(true) // Open success dialog
+      }
+    } catch (error) {
+      console.error('Error canceling reservation:', error)
+    }
   }
 
   const handleReviewClick = (id: number) => {
@@ -121,51 +143,59 @@ export default function HistoryPage() {
       </p>
 
       <div className="space-y-4">
-        {reservations.map((reservation) => {
-          const isPastTrip = isDatePassed(reservation.endDate) // Adjusted to use endDate from API response
-          return (
-            <div
-              key={reservation.reservationId} // Use reservationId from API response
-              className={`${
-                isPastTrip ? 'bg-gray-700' : 'bg-blue-500'
-              } text-white rounded-lg p-6 space-y-4`}
-            >
-              <div className="flex justify-between items-start">
-                <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">
-                    {reservation.tripTitle}
-                  </h3>
-                  <div className="space-y-1">
-                    <p className="text-sm">• 출발일: {reservation.startDate}</p>
-                    <p className="text-sm">• 도착일: {reservation.endDate}</p>
-                  </div>
-                  <p className="text-sm max-w-xl">
-                    {truncateDescription(reservation.tripDescription, 50)}
-                  </p>
-                </div>
-                <div className="text-right space-y-2">
-                  <div>
-                    <div className="text-sm">상품 금액</div>
-                    <div className="text-2xl font-semibold">
-                      ${reservation.tripPrice.toLocaleString()}
+        {reservations.length === 0 ? (
+          <div className="text-center text-gray-500">
+            예약된 여행 상품이 없습니다.
+          </div>
+        ) : (
+          reservations.map((reservation) => {
+            const isPastTrip = isDatePassed(reservation.endDate)
+            return (
+              <div
+                key={reservation.reservationId}
+                className={`${
+                  isPastTrip ? 'bg-gray-700' : 'bg-blue-500'
+                } text-white rounded-lg p-6 space-y-4`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-semibold">
+                      {reservation.tripTitle}
+                    </h3>
+                    <div className="space-y-1">
+                      <p className="text-sm">
+                        • 출발일: {reservation.startDate}
+                      </p>
+                      <p className="text-sm">• 도착일: {reservation.endDate}</p>
                     </div>
+                    <p className="text-sm max-w-xl">
+                      {truncateDescription(reservation.tripDescription, 50)}
+                    </p>
                   </div>
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() =>
-                      isPastTrip
-                        ? handleReviewClick(reservation.reservationId)
-                        : handleCancelClick(reservation.reservationId)
-                    } // Use reservationId for handling
-                  >
-                    {isPastTrip ? '리뷰 작성' : '예약 취소'}
-                  </Button>
+                  <div className="text-right space-y-2">
+                    <div>
+                      <div className="text-sm">상품 금액</div>
+                      <div className="text-2xl font-semibold">
+                        ${reservation.tripPrice.toLocaleString()}
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() =>
+                        isPastTrip
+                          ? handleReviewClick(reservation.reservationId)
+                          : handleCancelClick(reservation.reservationId)
+                      }
+                    >
+                      {isPastTrip ? '리뷰 작성' : '예약 취소'}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -267,6 +297,24 @@ export default function HistoryPage() {
               className="flex-1 sm:flex-none"
             >
               리뷰 제출
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              예약 취소
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm">예약이 취소되었습니다.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              확인
             </Button>
           </DialogFooter>
         </DialogContent>

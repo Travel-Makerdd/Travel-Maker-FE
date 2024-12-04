@@ -8,6 +8,13 @@ import { TripData } from './trip-type'
 import TripSchedule from './trip-schedule'
 import { differenceInDays } from 'date-fns'
 import { useAuth } from '@/app/context/AuthContext'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 const SchedulePage = () => {
   const { auth } = useAuth()
@@ -36,6 +43,8 @@ const SchedulePage = () => {
       schedual_day: [],
     }
   })
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,9 +77,19 @@ const SchedulePage = () => {
   const createTrip = async (data: TripData) => {
     const formData = new FormData()
 
+    const totalActivityExpense = data.schedual_day.reduce((total, day) => {
+      return (
+        total +
+        day.activities.reduce((dayTotal, activity) => {
+          return dayTotal + activity.activityExpense
+        }, 0)
+      )
+    }, 0)
+
+    formData.append('tripPrice', totalActivityExpense.toString())
+
     formData.append('tripTitle', data.trip_title)
     formData.append('tripDescription', data.trip_description)
-    formData.append('tripPrice', data.trip_price.toString())
     formData.append(
       'startDate',
       new Date(data.trip_start).toISOString().split('T')[0],
@@ -101,7 +120,18 @@ const SchedulePage = () => {
       console.error('Failed to create trip:', response.statusText)
     } else {
       const result = await response.json()
-      console.log('Trip created successfully:', result)
+      if (result.status === 201) {
+        setIsDialogOpen(true)
+        setTripData({
+          trip_title: '',
+          trip_description: '',
+          trip_price: 0,
+          trip_start: '',
+          trip_end: '',
+          tripImageUrls: [],
+          schedual_day: [],
+        })
+      }
     }
   }
 
@@ -125,6 +155,24 @@ const SchedulePage = () => {
           <ActivityForm tripData={tripData} setTripData={setTripData} />
         </div>
       </main>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              등록 성공
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm">여행 상품 등록이 완료되었습니다.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

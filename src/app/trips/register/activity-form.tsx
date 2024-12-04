@@ -27,9 +27,8 @@ const ActivityForm = ({ tripData, setTripData }: ActivityFormProps) => {
       activityExpense,
     }
 
-    setTripData((prev) => ({
-      ...prev,
-      schedual_day: prev.schedual_day.map((day) =>
+    setTripData((prev) => {
+      const updatedDays = prev.schedual_day.map((day) =>
         day.scheduleDay === selectedDay
           ? {
               ...day,
@@ -38,8 +37,24 @@ const ActivityForm = ({ tripData, setTripData }: ActivityFormProps) => {
               ),
             }
           : day,
-      ),
-    }))
+      )
+
+      // Calculate total activity expenses
+      const totalActivityExpense = updatedDays.reduce((total, day) => {
+        return (
+          total +
+          day.activities.reduce((dayTotal, activity) => {
+            return dayTotal + activity.activityExpense
+          }, 0)
+        )
+      }, 0)
+
+      return {
+        ...prev,
+        schedual_day: updatedDays,
+        trip_price: totalActivityExpense, // Update trip_price immediately
+      }
+    })
 
     // Reset form
     setActivityTime('')
