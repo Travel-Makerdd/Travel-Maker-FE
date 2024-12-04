@@ -1,36 +1,40 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Box, ChevronRight, Heart } from 'lucide-react'
 import Link from 'next/link'
+import { useAuth } from '@/app/context/AuthContext'
+import { FavoriteTrip } from './trip-type'
 
 const FavoritesPage = () => {
-  const favorite_history = [
-    {
-      id: 1,
-      post_title: '제주 에코 어드벤처 패키지',
-      post_content: '제주의 자연을 만끽하는 5일 코스'
-    },
-    {
-      id: 2,
-      post_title: '도쿄 테크노 타임워프 투어',
-      post_content: '과거와 미래가 공존하는 도쿄 7일 여행'
-    },
-    {
-      id: 3,
-      post_title: '파리 로맨스 허니문 스페셜',
-      post_content: '낭만 가득한 파리 6일 신혼여행'
-    },
-    {
-      id: 4,
-      post_title: '뉴욕 패밀리 펀 어드벤처',
-      post_content: '온 가족이 즐기는 뉴욕 8일 여행'
-    },
-    {
-      id: 5,
-      post_title: '방콕 버킷 익스플로러',
-      post_content: '알뜰하게 즐기는 방콕 5일 여행'
+  const { auth } = useAuth()
+  const [favoriteHistory, setFavoriteHistory] = useState<FavoriteTrip[]>([])
+
+  useEffect(() => {
+    const fetchFavoriteTrips = async () => {
+      if (!auth.token) {
+        return
+      }
+
+      try {
+        const response = await fetch('/api/trip/favorite/checkAll', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${auth.token}`,
+          },
+        })
+
+        const result = await response.json()
+        if (result.status === 200) {
+          setFavoriteHistory(result.data)
+        }
+      } catch (error) {
+        console.error('Error fetching favorite trips:', error)
+      }
     }
-  ]
+
+    fetchFavoriteTrips()
+  }, [auth.token])
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -40,20 +44,20 @@ const FavoritesPage = () => {
       </div>
 
       <div className="space-y-4">
-        {favorite_history.map((favorite) => (
+        {favoriteHistory.map((favorite) => (
           <Link
-            href={`/products/${favorite.id}`}
-            key={favorite.id}
+            href={`/trips/${favorite.tripId}`}
+            key={favorite.tripFavoriteId}
             className="block"
           >
             <div className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted transition-colors border">
               <Box className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-lg leading-tight mb-1">
-                  {favorite.post_title}
+                  {favorite.tripTitle}
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  {favorite.post_content}
+                  {favorite.tripDescription}
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
