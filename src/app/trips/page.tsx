@@ -10,9 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Star, MapPin, Search } from 'lucide-react'
+import { MapPin, Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 interface Trip {
@@ -30,11 +29,19 @@ const TravelPackageSearch = () => {
   const { auth } = useAuth()
   const [destinations, setDestinations] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
+  const [imageUrls, setImageUrls] = useState<{ [key: number]: string }>({}) // To store fetched image URLs
 
   useEffect(() => {
     const fetchTrips = async () => {
+      if (!auth.token) {
+        // console.error('No authentication token found. Please log in.')
+        setLoading(false)
+        return
+      }
+
       try {
         const response = await fetch('/api/trip/checkAll', {
+          method: 'GET',
           headers: {
             Authorization: `Bearer ${auth.token}`,
           },
@@ -42,6 +49,27 @@ const TravelPackageSearch = () => {
         const result = await response.json()
         if (result.status === 200) {
           setDestinations(result.data)
+          // Fetch images for each trip
+          result.data.forEach(async (pack: Trip) => {
+            if (pack.tripImageUrls[0]) {
+              const imageResponse = await fetch(pack.tripImageUrls[0], {
+                method: 'GET',
+                headers: {
+                  Authorization: `Bearer ${auth.token}`,
+                },
+              })
+              if (imageResponse.ok) {
+                const imageBlob = await imageResponse.blob()
+                const imageUrl = URL.createObjectURL(imageBlob)
+                setImageUrls((prev) => ({ ...prev, [pack.tripId]: imageUrl }))
+              } else {
+                console.error(
+                  'Failed to fetch image:',
+                  imageResponse.statusText,
+                )
+              }
+            }
+          })
         }
       } catch (error) {
         console.error('Error fetching trip data:', error)
@@ -51,10 +79,10 @@ const TravelPackageSearch = () => {
     }
 
     fetchTrips()
-  }, [])
+  }, [auth.token])
 
   if (loading) {
-    return <div>Loading...</div> // Show a loading state while fetching data
+    return <div>Loading...</div>
   }
 
   return (
@@ -83,7 +111,7 @@ const TravelPackageSearch = () => {
           {destinations.map((pack) => (
             <Card key={pack.tripId} className="overflow-hidden">
               <img
-                src={pack.tripImageUrls[0] || '/placeholder.svg'} // Fallback image
+                src={imageUrls[pack.tripId] || '/images/placeholder.svg'} // Use fetched image or fallback to placeholder
                 alt={`${pack.tripTitle} 이미지`}
                 className="w-full h-48 object-cover"
               />
@@ -107,40 +135,6 @@ const TravelPackageSearch = () => {
               </CardFooter>
             </Card>
           ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-6">특별 여행 패키지</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>제주 에코 어드벤처 패키지</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                제주의 아름다운 자연을 체험하는 친환경 여행 패키지. 올레길
-                트레킹, 해녀 문화 체험, 유기농 음식 투어를 포함합니다.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline">패키지 상세보기</Button>
-            </CardFooter>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>도쿄 테크노 타임워프 투어</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>
-                미래와 과거가 공존하는 도쿄를 경험하세요. 최첨단 기술 전시회,
-                레트로 게임 카페, 로봇 레스토랑 등을 포함한 독특한 패키지입니다.
-              </p>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline">패키지 상세보기</Button>
-            </CardFooter>
-          </Card>
         </div>
       </section>
     </div>
