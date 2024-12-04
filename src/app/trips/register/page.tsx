@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
-import ScheduleForm from './schedule-form'
+import ActivityForm from './activity-form'
 import TripInfo from './trip-info'
 import TripInfo2 from './trip-info-2'
 import { TripData } from './trip-type'
@@ -54,6 +54,12 @@ const SchedulePage = () => {
         ...prev,
         schedual_day: newScheduleDays,
       }))
+    } else if (!tripData.trip_start || !tripData.trip_end) {
+      // Check if either date is missing
+      setTripData((prev) => ({
+        ...prev,
+        schedual_day: [], // Reset schedual_day to empty array
+      }))
     }
   }, [tripData.trip_start, tripData.trip_end])
 
@@ -63,8 +69,8 @@ const SchedulePage = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          <TripSchedule tripData={tripData} />
-          <ScheduleForm />
+          <TripSchedule tripData={tripData} setTripData={setTripData} />
+          <ActivityForm tripData={tripData} setTripData={setTripData} />
         </div>
       </main>
     </>

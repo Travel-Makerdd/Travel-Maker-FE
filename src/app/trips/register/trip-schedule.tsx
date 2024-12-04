@@ -6,9 +6,31 @@ import { TripData } from './trip-type'
 
 interface TripScheduleProps {
   tripData: TripData
+  setTripData: React.Dispatch<React.SetStateAction<TripData>>
 }
 
-const TripSchedule = ({ tripData }: TripScheduleProps) => {
+const TripSchedule = ({ tripData, setTripData }: TripScheduleProps) => {
+  const handleDeleteActivity = (dayIndex: number, activityIndex: number) => {
+    setTripData((prev) => {
+      const updatedDays = prev.schedual_day.map((day, index) => {
+        if (index === dayIndex) {
+          // Create a new activities array without the deleted activity
+          return {
+            ...day,
+            activities: day.activities.filter(
+              (_, aIndex) => aIndex !== activityIndex,
+            ),
+          }
+        }
+        return day // Return unchanged day
+      })
+      return {
+        ...prev,
+        schedual_day: updatedDays,
+      }
+    })
+  }
+
   return (
     <div className="space-y-6">
       {tripData.schedual_day.map((daySchedule, dayIndex) => (
@@ -45,7 +67,13 @@ const TripSchedule = ({ tripData }: TripScheduleProps) => {
                         <Button variant="ghost" size="icon">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            handleDeleteActivity(dayIndex, activityIndex)
+                          } // Call delete function
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
