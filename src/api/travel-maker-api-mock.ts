@@ -68,7 +68,7 @@ export const createTrip = (data: {
   trip_price: number
   trip_start: string
   trip_end: string
-  tripImageUrls: string[]
+  tripImageUrls: File[]
   schedual_day: any[] // Define the structure as needed
 }) => {
   return {

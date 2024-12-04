@@ -47,10 +47,29 @@ export const createTrip = async (data: {
   trip_price: number
   trip_start: string
   trip_end: string
-  tripImageUrls: string[]
-  schedual_day: any[] // Define the structure as needed
+  tripImageUrls: File[]
+  schedual_day: any[]
 }) => {
-  return await client.post('/api/trip/create', data)
+  const formData = new FormData()
+
+  // Append text fields with correct parameter names
+  formData.append('tripTitle', data.trip_title)
+  formData.append('tripDescription', data.trip_description)
+  formData.append('tripPrice', data.trip_price.toString())
+  formData.append('tripStart', data.trip_start)
+  formData.append('tripEnd', data.trip_end)
+  formData.append('schedualDay', JSON.stringify(data.schedual_day))
+
+  // Append files
+  data.tripImageUrls.forEach((file) => {
+    formData.append('tripImageUrls', file)
+  })
+
+  return await client.post('/api/trip/create', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
 }
 
 // 모든 여행 조회. (GET /api/trip/checkAll)

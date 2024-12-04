@@ -53,7 +53,7 @@ import {
 /**
  * 테스트 모드 여부.
  */
-const IS_TEST_MODE = true
+const IS_TEST_MODE = false
 
 // Unified API functions
 export const signUp = (data: {
@@ -94,7 +94,7 @@ export const createTrip = (data: {
   trip_price: number
   trip_start: string
   trip_end: string
-  tripImageUrls: string[]
+  tripImageUrls: File[]
   schedual_day: any[]
 }) => {
   return IS_TEST_MODE ? mockCreateTrip(data) : prodCreateTrip(data)
