@@ -13,6 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { MapPin, Search } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useRouter } from 'next/navigation'
 
 interface Trip {
   tripId: number
@@ -26,6 +27,7 @@ interface Trip {
 }
 
 const TravelPackageSearch = () => {
+  const router = useRouter()
   const { auth } = useAuth()
   const [destinations, setDestinations] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
@@ -131,7 +133,14 @@ const TravelPackageSearch = () => {
                 <p className="text-sm text-gray-600">{pack.tripDescription}</p>
               </CardContent>
               <CardFooter>
-                <Button className="w-full">상세 정보</Button>
+                <Button
+                  onClick={() => {
+                    router.push(`/trips/${pack.tripId}`)
+                  }}
+                  className="w-full"
+                >
+                  상세 정보
+                </Button>
               </CardFooter>
             </Card>
           ))}
