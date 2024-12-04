@@ -1,133 +1,392 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
+import { useAuth } from '@/app/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowRight, Pencil, Star, X, Check } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+
+interface PostDetailResponse {
+    status: number;
+    data: {
+        postId: number;
+        postTitle: string;
+        postContent: string;
+        userId: number;
+        postImageUrls: string[];
+        imageBlobUrls?: string[];
+        isFavorite: boolean;
+        favorite?: boolean;
+    };
+    message: string;
+}
 
 interface Comment {
-    id: number;
-    user: string;
-    content: string;
+    commentId: number;
+    userId: number;
+    postId: number;
+    userNickname: string;
+    commentContent: string;
     createdAt: string;
 }
 
-interface Post {
-    postId: number;
-    postTitle: string;
-    postContent: string;
-    postImageUrl: string;
-    comments: Comment[];
-}
-
-const MOCK_POST: Post = {
-    postId: 1,
-    postTitle: "제주도에서의 아름다운 일출",
-    postContent: "제주도 성산일출봉에서 맞이한 감동적인 일출 장면입니다. 이른 아침부터 일어나 힘들게 올라갔지만, 그 경치는 정말 끝내줬어요!",
-    postImageUrl: "/placeholder.svg",
-    comments: [
-        { id: 1, user: "남궁민", content: "정말 멋지네요!", createdAt: "10분 전" },
-        { id: 2, user: "박지현", content: "여기 꼭 가봐야겠어요!", createdAt: "20분 전" },
-    ],
+const formatDate = (isoDate: string): string => {
+    const date = new Date(isoDate);
+    return new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    }).format(date);
 };
 
-export default function PostDetailPage({ params }: { params: Promise<{ postId: string }> }) {
-    const { postId } = use(params); // Promise로부터 postId 언래핑
-    const [post, setPost] = useState<Post | null>(null);
-    const [newComment, setNewComment] = useState<string>(''); // 댓글 입력값
-    /*
-    // 댓글 추가 핸들러
-    const handleAddComment = async () => {
-        if (!newComment.trim()) return alert("댓글을 입력하세요!");
+const getAvatarFallback = (nickname: string): string => {
+    return nickname.slice(0, 2);
+};
 
+export default function PostDetailPage() {
+    const { postId } = useParams();
+    const { auth } = useAuth();
+    const [post, setPost] = useState<PostDetailResponse['data'] | null>(null);
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const [commentInput, setCommentInput] = useState('');
+    const [triggerFetch, setTriggerFetch] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState('');
+    const [editedContent, setEditedContent] = useState('');
+    const [editedImage, setEditedImage] = useState<File | null>(null);
+
+    useEffect(() => {
+        if (!postId || !auth.token) return;
+    
+        const fetchPostDetail = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch(`/api/post/check/${postId}`, {
+                    method: 'GET',
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${auth.token}`,
+                    },
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`게시글 데이터를 가져오는 데 실패했습니다: ${response.status}`);
+                }
+    
+                const result: PostDetailResponse = await response.json();
+                const data = result.data;
+                console.log("API 응답 데이터:", result.data);
+                const imageUrls: string[] = data.postImageUrls ?? [];
+    
+                const imageBlobUrls = await Promise.all(
+                    imageUrls.map((url: string) => {
+                        const imageName = url.split('/').pop();
+                        return imageName ? fetchPostImage(data.postId, imageName, auth.token) : null;
+                    })
+                );
+    
+                const safeImageBlobUrls = imageBlobUrls.filter((url): url is string => url !== null);
+    
+                // 즐겨찾기 상태 동적으로 설정
+                setPost({
+                    ...data,
+                    isFavorite: result.data.favorite ?? false, // 서버에서 받은 favorite 값 설정
+                    imageBlobUrls: safeImageBlobUrls,
+                });
+            } catch (err) {
+                console.error("Error during fetch:", err);
+                setError(err instanceof Error ? err.message : "알 수 없는 에러 발생");
+            } finally {
+                setLoading(false);
+            }
+        };
+    
+        const fetchComments = async () => {
+            try {
+                const response = await fetch(`/api/post/${postId}/getComment`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${auth.token}`,
+                    },
+                });
+    
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        setComments([]);
+                        return;
+                    }
+                    throw new Error(`댓글 데이터를 가져오는 데 실패했습니다: ${response.status}`);
+                }
+    
+                const result = await response.json();
+                const data: Comment[] = result.data || [];
+                setComments(data);
+            } catch (err) {
+                console.error("Error during fetch comments:", err);
+                setComments([]);
+            }
+        };
+    
+        fetchPostDetail();
+        fetchComments();
+    }, [postId, auth.token, triggerFetch]);
+    
+    const fetchPostImage = async (postId: number, imageName: string, token: string): Promise<string | null> => {
         try {
-            // 서버로 POST 요청 보내기
-            const response = await fetch(`/api/posts/${postId}/comments`, {
+            const imageResponse = await fetch(`/api/post/check/${postId}/image/${imageName}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!imageResponse.ok) {
+                throw new Error(`이미지를 가져오는 데 실패했습니다: ${imageResponse.statusText}`);
+            }
+
+            const blob = await imageResponse.blob();
+            return URL.createObjectURL(blob);
+        } catch (err) {
+            console.error("Error fetching image:", err);
+            return null;
+        }
+    };
+
+    const toggleFavorite = async () => {
+        if (!post) return;
+    
+        const updatedIsFavorite = !post.isFavorite; // 상태 반전
+    
+        try {
+            const endpoint = updatedIsFavorite
+                ? `/api/post/${postId}/favorite`
+                : `/api/post/${postId}/unfavorite`;
+    
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${auth.token}`,
+                },  
+            });
+    
+            if (!response.ok) {
+                throw new Error(`즐겨찾기 처리에 실패했습니다: ${response.status}`);
+            }
+    
+            // 상태 업데이트
+            setPost((prev) => prev ? { ...prev, isFavorite: updatedIsFavorite } : null);
+        } catch (err) {
+            console.error("Error toggling favorite:", err);
+        }
+    };
+
+    const handleAddComment = async () => {
+        if (!commentInput.trim()) return;
+
+        try {
+            const response = await fetch(`/api/post/${postId}/addComment`, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${auth.token}`,
                 },
-                body: JSON.stringify({
-                    content: newComment,
-                    user: '현재 사용자', // 여기에 현재 로그인된 사용자 이름을 추가하세요
-                }),
+                body: JSON.stringify({ commentContent: commentInput }),
             });
 
             if (!response.ok) {
-                throw new Error('댓글 추가 실패');
+                throw new Error(`댓글 추가에 실패했습니다: ${response.status}`);
             }
 
-            const addedComment: Comment = await response.json();
-
-            // 상태를 업데이트하여 새 댓글 추가
-            setPost((prevPost) => {
-                if (!prevPost) return null;
-                return {
-                    ...prevPost,
-                    comments: [...prevPost.comments, addedComment],
-                };
-            });
-
-            setNewComment(''); // 입력창 초기화
-        } catch (error) {
-            console.error(error);
-            alert("댓글 추가 중 오류가 발생했습니다.");
+            setCommentInput('');
+            setTriggerFetch((prev) => !prev);
+        } catch (err) {
+            console.error("Error adding comment:", err);
         }
     };
-    */
 
-    useEffect(() => {
-        if (postId) {
-            setPost(MOCK_POST); // Mock 데이터 로드
+    const handleEdit = () => {
+        if (post) {
+            setEditedTitle(post.postTitle);
+            setEditedContent(post.postContent);
+            setIsEditing(true);
         }
-    }, [postId]);
+    };
 
-    if (!post) return <div>로딩 중...</div>;
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditedImage(null);
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setEditedImage(e.target.files[0]);
+        }
+    };
+
+    const handleSaveEdit = async () => {
+        if (!post || !postId) return;
+    
+        const formData = new FormData();
+        formData.append('postTitle', editedTitle);
+        formData.append('postContent', editedContent);
+    
+        // 새 이미지 업로드
+        if (editedImage) {
+            formData.append('postImages', editedImage);
+        }
+    
+        try {
+            const response = await fetch(`/api/post/update/${postId}`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${auth.token}`, // FormData에선 Content-Type 자동 설정
+                },
+                body: formData,
+            });
+    
+            if (!response.ok) {
+                throw new Error(`게시글 수정에 실패했습니다: ${response.status}`);
+            }
+    
+            const updatedPost = await response.json();
+    
+            // 서버에서 반환한 데이터로 상태를 갱신
+            setPost(updatedPost.data);
+            setIsEditing(false);
+            setTriggerFetch((prev) => !prev); // 필요 시 댓글 목록 재로드
+        } catch (err) {
+            console.error("Error updating post:", err);
+        }
+    };
+    
+
+    if (loading) return <div>로딩 중...</div>;
+    if (error) return <div>에러 발생: {error}</div>;
+    if (!post) return <div>게시글 데이터를 불러올 수 없습니다.</div>;
 
     return (
         <div className="min-h-screen bg-gray-50 px-4 py-6">
-            <div className="max-w-3xl mx-auto bg-white rounded-lg shadow">
-                <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">{post.postTitle}</h1>
-                    <div className="relative w-full h-64 bg-gray-200 mb-4">
-                        <Image src={post.postImageUrl} alt={post.postTitle} fill className="object-cover" />
-                    </div>
-                    <p className="text-gray-700">{post.postContent}</p>
+            <Card className="max-w-3xl mx-auto relative">
+                <div className="absolute top-4 right-4 flex space-x-2">
+                    {isEditing ? (
+                        <>
+                            <Button variant="outline" size="icon" onClick={handleSaveEdit}>
+                                <Check className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" onClick={handleCancelEdit}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </>
+                    ) : (
+                        <Button variant="outline" size="icon" onClick={handleEdit}>
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    )}
+                    <Button variant="outline" size="icon" onClick={toggleFavorite}>
+                        <Star
+                            className={`h-4 w-4 ${
+                                post.isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'
+                            }`}
+                        />
+                    </Button>
                 </div>
 
-                {/* 댓글 섹션 */}
-                <div className="border-t px-6 py-4">
-                    <h2 className="text-lg font-bold mb-4">댓글</h2>
-                    <div className="space-y-4">
-                        {post.comments.map((comment) => (
-                            <div key={comment.id} className="flex items-start space-x-3">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full" />
-                                <div>
-                                    <div className="text-sm font-bold">{comment.user}</div>
-                                    <div className="text-sm text-gray-500">{comment.createdAt}</div>
-                                    <p>{comment.content}</p>
+                <CardContent className="p-6">
+                    {isEditing ? (
+                        <>
+                            <Input
+                                value={editedTitle}
+                                onChange={(e) => setEditedTitle(e.target.value)}
+                                className="text-2xl font-bold mb-4"
+                            />
+                            <Textarea
+                                value={editedContent}
+                                onChange={(e) => setEditedContent(e.target.value)}
+                                className="mb-4"
+                                rows={5}
+                            />
+                            <Input
+                                type="file"
+                                onChange={handleImageChange}
+                                accept="image/*"
+                                className="mb-4"
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <h1 className="text-2xl font-bold mb-4">{post.postTitle}</h1>
+                            <p className="text-gray-700 mb-4">{post.postContent}</p>
+                        </>
+                    )}
+                    <div className="relative w-full h-64 mb-6 bg-gray-200 rounded-lg overflow-hidden">
+                        {post.imageBlobUrls && post.imageBlobUrls.length > 0 && (
+                            <Image
+                                src={post.imageBlobUrls[0]}
+                                alt={post.postTitle}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                            />
+                        )}
+                    </div>
+
+                    <div className="mt-8">
+                        <h2 className="text-xl font-bold mb-6">댓글</h2>
+                        <div className="space-y-6">
+                            {comments.map((comment) => (
+                                <div key={comment.commentId} className="flex items-start gap-3">
+                                    <Avatar className="w-8 h-8">
+                                        <AvatarImage src="/placeholder.svg" />
+                                        <AvatarFallback>
+                                            {getAvatarFallback(comment.userNickname)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-semibold">{comment.userNickname}</span>
+                                            <span className="text-sm text-gray-500">
+                                                {formatDate(comment.createdAt)}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-700">{comment.commentContent}</p>
+                                    </div>
                                 </div>
+                            ))}
+                        </div>
+                        <div className="mt-6 flex items-start gap-3">
+                            <Avatar className="w-8 h-8">
+                                <AvatarImage src="/placeholder.svg" />
+                                <AvatarFallback>
+                                    {getAvatarFallback(auth.nickname || '익명')}
+                                </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 flex gap-2">
+                                <Input
+                                    placeholder="댓글을 입력하세요..."
+                                    value={commentInput}
+                                    onChange={(e) => setCommentInput(e.target.value)}
+                                    className="flex-1"
+                                />
+                                <Button size="icon" className="shrink-0" onClick={handleAddComment}>
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
-
-                {/* 댓글 입력 섹션 */}
-                <div className="border-t px-6 py-4 flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full" />
-                    <input
-                        type="text"
-                        className="flex-1 px-4 py-2 border rounded-lg text-sm"
-                        placeholder="댓글을 입력하세요..."
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                    />
-                    <button
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg"
-                        /*onClick={handleAddComment}*/
-                    >
-                        등록
-                    </button>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
+
