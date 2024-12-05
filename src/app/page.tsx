@@ -295,7 +295,7 @@ const MainPage = () => {
                     )}
                     <p className="text-sm mt-4 text-muted-foreground">
                       아직 회원이 아니신가요?{' '}
-                      <Link href="/signUp" className="text-blue-500 hover:underline">
+                      <Link href="/signup" className="text-blue-500 hover:underline">
                         회원가입
                       </Link>
                     </p>
