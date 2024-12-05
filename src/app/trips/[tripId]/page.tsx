@@ -13,7 +13,7 @@ import {
   DialogClose,
   DialogDescription,
   DialogTitle,
-  DialogHeader,
+  DialogHeader, 
   DialogContent,
 } from '@/components/ui/dialog'
 
@@ -25,7 +25,8 @@ interface TripData {
   tripPrice: number
   startDate: string
   endDate: string
-  schedules: any // Adjust type as necessary
+  schedules: any
+  favorite: boolean
 }
 
 // Define a Review interface to type the fetched data
@@ -68,7 +69,7 @@ export default function TravelBooking() {
         const result = await response.json()
         if (result.status === 200) {
           setTripData(result.data)
-
+          setIsFavorited(result.data.favorite)
           // Fetch images for each trip
           result.data.tripImageUrls.forEach(async (imageUrl: string) => {
             const imageResponse = await fetch(imageUrl, {
@@ -101,39 +102,49 @@ export default function TravelBooking() {
 
   useEffect(() => {
     const fetchReviews = async () => {
-      if (!auth.token) {
-        return
+      if (!auth.token || !tripId) {
+        console.error("로그인 상태나 여행상품 ID가 유효하지 않습니다.");
+        return;
       }
 
       try {
+        // 리뷰 조회 API 요청
         const response = await fetch(`/api/review/check/${tripId}`, {
-          method: 'GET',
+          method: "GET",
           headers: {
             Authorization: `Bearer ${auth.token}`,
           },
-        })
+        });
 
-        const result = await response.json()
+        if (!response.ok) {
+          throw new Error(`리뷰 데이터를 가져오는 데 실패했습니다: ${response.status}`);
+        }
+
+        const result = await response.json();
+
         if (result.status === 200) {
-          setReviews(result.data) // Set the fetched reviews
+          setReviews(result.data); // 리뷰 데이터를 상태로 업데이트
+        } else {
+          console.error("리뷰 조회 실패:", result.message);
         }
       } catch (error) {
-        console.error('Error fetching reviews:', error)
+        console.error("리뷰 요청 중 오류 발생:", error);
       }
-    }
+    };
 
-    fetchReviews()
-  }, [auth.token, tripId])
+    fetchReviews();
+  }, [auth.token, tripId]);
+
 
   const handleFavoriteToggle = async () => {
     if (!auth.token) {
       return
     }
-
+  
     const url = isFavorited
       ? `/api/trip/favorite/remove/${tripId}`
       : `/api/trip/favorite/add/${tripId}`
-
+  
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -141,9 +152,9 @@ export default function TravelBooking() {
           Authorization: `Bearer ${auth.token}`,
         },
       })
-
+  
       if (response.ok) {
-        setIsFavorited(!isFavorited) // Toggle the favorited state
+        setIsFavorited(!isFavorited) // 상태 반전
       } else {
         console.error('Failed to update favorite status:', response.statusText)
       }
@@ -151,6 +162,7 @@ export default function TravelBooking() {
       console.error('Error updating favorite status:', error)
     }
   }
+  
 
   const handleReservation = async () => {
     if (!auth.token) {
@@ -215,9 +227,8 @@ export default function TravelBooking() {
               onClick={handleFavoriteToggle} // Handle favorite toggle
             >
               <Star
-                className={`w-6 h-6 ${
-                  isFavorited ? 'fill-primary' : 'fill-muted'
-                }`}
+                className={`w-6 h-6 ${isFavorited ? 'fill-primary' : 'fill-muted'
+                  }`}
               />
             </Button>
           </div>
@@ -269,28 +280,24 @@ export default function TravelBooking() {
 
       <div className="grid md:grid-cols-3 gap-4">
         {reviews.length === 0 ? (
-          <div className="text-center text-gray-500">리뷰가 없습니다</div> // Display message when there are no reviews
+          <div className="text-center text-gray-500">리뷰가 없습니다</div> // 리뷰가 없을 때 메시지 표시
         ) : (
           reviews.map((review) => (
             <Card key={review.reviewId}>
               <CardContent className="p-4 space-y-4">
                 <div className="flex gap-1">
+                  {/* 리뷰 평점 별 표시 */}
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
-                      className={`w-4 h-4 ${
-                        i < review.reviewRating
-                          ? 'fill-primary'
-                          : 'fill-muted stroke-muted-foreground'
-                      }`}
+                      className={`w-4 h-4 ${i < review.reviewRating ? "fill-primary" : "fill-muted stroke-muted-foreground"
+                        }`}
                     />
                   ))}
                 </div>
                 <div>
                   <h3 className="font-medium">{review.tripTitle}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {review.reviewContent}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{review.reviewContent}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Avatar className="w-8 h-8">
@@ -301,7 +308,7 @@ export default function TravelBooking() {
                     <AvatarFallback>{review.userId}</AvatarFallback>
                   </Avatar>
                   <div className="text-sm">
-                    <div>{review.userId}</div>
+                    <div>작성자 ID: {review.userId}</div>
                     <div className="text-muted-foreground">
                       {new Date(review.updatedAt).toLocaleDateString()}
                     </div>
@@ -312,6 +319,7 @@ export default function TravelBooking() {
           ))
         )}
       </div>
+
     </div>
   )
 }

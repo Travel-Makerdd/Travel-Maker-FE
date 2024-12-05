@@ -76,31 +76,42 @@ export default function HistoryPage() {
 
   const handleConfirmCancel = async () => {
     if (!auth.token || selectedReservation === null) {
-      return // Ensure token and reservation ID are available
+      return; // Ensure token and reservation ID are available
     }
-
+  
+    // 선택된 reservation에서 tripId를 추출합니다.
+    const selectedTrip = reservations.find(
+      (reservation) => reservation.reservationId === selectedReservation
+    );
+  
+    if (!selectedTrip) {
+      console.error("Reservation not found for the given ID.");
+      return;
+    }
+  
     try {
-      const response = await fetch(
-        `/api/reservation/delete/${selectedReservation}`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${auth.token}`,
-          },
+      // tripId를 사용하여 서버로 삭제 요청을 보냅니다.
+      const response = await fetch(`/api/reservation/delete/${selectedTrip.tripId}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
         },
-      )
-
-      const result = await response.json()
+      });
+  
+      const result = await response.json();
       if (result.status === 200) {
-        setIsModalOpen(false) // Close the cancel confirmation modal
-        setSelectedReservation(null) // Clear the selected reservation
-        setIsDialogOpen(true) // Open success dialog
-        window.location.reload()
+        setIsModalOpen(false); // Close the cancel confirmation modal
+        setSelectedReservation(null); // Clear the selected reservation
+        setIsDialogOpen(true); // Open success dialog
+        window.location.reload(); // Reload the page to update the reservation list
+      } else {
+        console.error("Failed to cancel reservation:", result.message);
       }
     } catch (error) {
-      console.error('Error canceling reservation:', error)
+      console.error("Error canceling reservation:", error);
     }
-  }
+  };
+  
 
   const handleReviewClick = (id: number) => {
     setSelectedReservation(id)

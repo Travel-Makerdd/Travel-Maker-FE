@@ -34,37 +34,54 @@ export default function Component() {
     }
 
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const response = await fetch('/api/signUp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-      })
-
+      });
+    
       // 응답 상태 확인
       if (!response.ok) {
-        const errorData = await response.json()
-        alert(`회원가입에 실패했습니다: ${errorData.message || "알 수 없는 에러"}`)
-        return
+        let errorMessage = "알 수 없는 에러";
+        try {
+          const errorData = await response.json(); // JSON 파싱 시도
+          errorMessage = errorData.message || errorMessage;
+        } catch (err) {
+          console.error("JSON 파싱 실패:", err); // JSON 파싱 실패 로그
+        }
+        alert(`회원가입에 실패했습니다: ${errorMessage}`);
+        return;
       }
-
-      const data = await response.json()
-
+    
+      // 응답 본문이 비어 있는지 확인
+      const rawResponse = await response.text();
+      if (!rawResponse) {
+        console.error("응답 본문이 비어 있습니다.");
+        alert("서버에서 올바른 응답을 받지 못했습니다.");
+        return;
+      }
+    
+      // JSON 파싱
+      const data = JSON.parse(rawResponse);
+    
       // 회원가입 성공 처리
       if (data.status === 201) {
-        alert("회원가입이 완료되었습니다!")
-        route.push("/")
+        alert("회원가입이 완료되었습니다!");
+        route.push("/");
       } else {
-        alert(`회원가입에 실패했습니다: ${data.message || "알 수 없는 에러"}`)
+        alert(`회원가입에 실패했습니다: ${data.message || "알 수 없는 에러"}`);
       }
     } catch (error) {
-      console.error("회원가입 요청 중 오류 발생:", error)
-      alert("회원가입 요청 중 오류가 발생했습니다.")
+      console.error("회원가입 요청 중 오류 발생:", error);
+      alert("회원가입 요청 중 오류가 발생했습니다.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
+    
+    
   }
 
   const route = useRouter()
